@@ -1,0 +1,17 @@
+# This is a generated file; do not edit or check into version control.
+firebase_auth=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_auth-3.2.0/
+firebase_auth_web=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_auth_web-3.2.0/
+firebase_core=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core-1.10.0/
+firebase_core_web=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core_web-1.2.0/
+flutter_keyboard_visibility=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_keyboard_visibility-5.1.0/
+flutter_keyboard_visibility_web=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_keyboard_visibility_web-2.0.0/
+path_provider=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider-2.0.5/
+path_provider_linux=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider_linux-2.1.0/
+path_provider_macos=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider_macos-2.0.2/
+path_provider_windows=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider_windows-2.0.3/
+search_choices=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/search_choices-2.0.14/
+shared_preferences=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences-2.0.8/
+shared_preferences_linux=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_linux-2.0.2/
+shared_preferences_macos=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_macos-2.0.2/
+shared_preferences_web=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_web-2.0.2/
+shared_preferences_windows=/home/alan/snap/flutter/common/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_windows-2.0.2/
