@@ -1,9 +1,6 @@
 import 'package:alconometer/providers/app_cache.dart';
-import 'package:alconometer/providers/diary_entries.dart';
 import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/providers/drinks.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 enum DiaryType { day, week }
 

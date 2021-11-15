@@ -1,10 +1,6 @@
 import 'package:alconometer/features/auth/auth_screen.dart';
-import 'package:alconometer/features/diary/diary_screen.dart';
-import 'package:alconometer/features/data/data_screen.dart';
-import 'package:alconometer/features/drinks/drinks_screen.dart';
-import 'package:alconometer/features/settings/settings_screen.dart';
+import 'package:alconometer/features/auth/authentication_service.dart';
 import 'package:alconometer/features/home/drinks_tab_manager.dart';
-import 'package:alconometer/features/home/home_screen.dart';
 import 'package:alconometer/features/home/tab_manager.dart';
 import 'package:alconometer/features/loading/loading_screen.dart';
 import 'package:alconometer/providers/app_settings_manager.dart';
@@ -14,11 +10,15 @@ import 'package:alconometer/providers/diary_entries.dart';
 import 'package:alconometer/providers/drinks.dart';
 import 'package:alconometer/routing/app_router.dart';
 import 'package:alconometer/theme/alconometer_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
@@ -50,6 +50,14 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<AuthenticationService>(
+          create: (_) => AuthenticationService(
+            FirebaseAuth.instance,
+          ),
+        ),
+        StreamProvider<User?>(initialData: null, create: (context) => context.read<AuthenticationService>().authStateChanges),
+
+        ///
         ChangeNotifierProvider.value(
           value: Auth(),
         ),
@@ -65,21 +73,43 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (context) => DrinksTabManager(),
         ),
-        ChangeNotifierProxyProvider<Auth, Drinks>(
-          create: (context) => Drinks(Provider.of<Auth>(context, listen: false).token!, Provider.of<Auth>(context, listen: false).userId!, []),
-          update: (_, Auth? auth, previousDrinks) {
-            if (auth != null) {
-              return Drinks(auth.token, auth.userId, previousDrinks!.items);
+        ChangeNotifierProxyProvider<User, Drinks>(
+          create: (context) {
+            Provider.of<User>(context, listen: false).getIdToken().then((idToken) {
+              if (idToken != null) {
+                return Drinks(idToken, Provider.of<User>(context, listen: false).uid, []);
+              }
+            });
+            return Drinks.emptyValues();
+          },
+          update: (_, User? user, previousDrinks) {
+            if (user != null) {
+              user.getIdToken().then((idToken) {
+                return Drinks(idToken, user.uid, previousDrinks!.items);
+              });
+              return Drinks.emptyValues();
             } else {
               return Drinks.emptyValues();
             }
           },
         ),
-        ChangeNotifierProxyProvider<Auth, DiaryEntries>(
-          create: (context) => DiaryEntries(Provider.of<Auth>(context, listen: false).token!, Provider.of<Auth>(context, listen: false).userId!, []),
-          update: (_, Auth? auth, previousDiaryEntries) {
-            if (auth != null) {
-              return DiaryEntries(auth.token, auth.userId, previousDiaryEntries!.items);
+        ChangeNotifierProxyProvider<User, DiaryEntries>(
+          create: (context) {
+            Provider.of<User>(context, listen: false).getIdToken().then((idToken) {
+              if (idToken != null) {
+                return DiaryEntries(idToken, Provider.of<User>(context, listen: false).uid, []);
+              }
+            });
+            return DiaryEntries.emptyValues();
+          },
+          update: (_, User? user, previousDiaryEntries) {
+            if (user != null) {
+              user.getIdToken().then((idToken) {
+                if (idToken != null) {
+                  return DiaryEntries(idToken, user.uid, previousDiaryEntries!.items);
+                }
+              });
+              return DiaryEntries.emptyValues();
             } else {
               return DiaryEntries.emptyValues();
             }
@@ -100,18 +130,7 @@ class _MyAppState extends State<MyApp> {
               return MaterialApp(
                 title: 'Alconometer',
                 theme: theme,
-                home: authData.isAuth
-                    ? const LoadingScreen()
-                    : FutureBuilder(
-                        future: authData.tryAutoLogin(),
-                        builder: (ctx, authResultSnapshot) {
-                          if (authResultSnapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          } else {
-                            return const AuthScreen();
-                          }
-                        },
-                      ),
+                home: AuthenticationWrapper(),
                 onGenerateRoute: (settings) => AppRouter.onGenerateRoute(context, settings),
                 localizationsDelegates: const [
                   GlobalMaterialLocalizations.delegate,
@@ -130,3 +149,29 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
+class AuthenticationWrapper extends StatelessWidget {
+  const AuthenticationWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final firebaseUser = context.watch<User?>();
+    if (firebaseUser != null) {
+      return LoadingScreen();
+    }
+    return AuthScreen();
+  }
+}
+
+/*authData.isAuth
+                    ? const LoadingScreen()
+                    : FutureBuilder(
+                        future: authData.tryAutoLogin(),
+                        builder: (ctx, authResultSnapshot) {
+                          if (authResultSnapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          } else {
+                            return const AuthScreen();
+                          }
+                        },
+                      ),*/

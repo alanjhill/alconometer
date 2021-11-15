@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:alconometer/features/auth/authentication_service.dart';
 import 'package:alconometer/providers/auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AuthMode { Signup, Login }
 
@@ -91,95 +92,6 @@ class _AuthCardState extends State<AuthCard> with SingleTickerProviderStateMixin
     _slideAnimation =
         Tween<Offset>(begin: Offset(0, -1.5), end: Offset(0, 0)).animate(CurvedAnimation(parent: _animationController!, curve: Curves.fastOutSlowIn));
     _opacityAnimation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _animationController!, curve: Curves.fastOutSlowIn));
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('An error occurred'),
-        content: Text(message),
-        actions: <Widget>[
-          TextButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-            },
-          )
-        ],
-      ),
-    );
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      // Invalid!
-      return;
-    }
-    _formKey.currentState!.save();
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      if (_authMode == AuthMode.Login) {
-        // Log user in
-        await Provider.of<Auth>(context, listen: false).signin(
-          _authData['email']!,
-          _authData['password']!,
-        );
-      } else {
-        // Sign user up
-        await Provider.of<Auth>(context, listen: false).signup(
-          _authData['email']!,
-          _authData['password']!,
-        );
-      }
-    } on HttpException catch (error) {
-      var errorMessage = 'Authentication failed';
-      switch (error.toString()) {
-        case 'EMAIL_EXISTS':
-          errorMessage = 'The email address is already in use.';
-          break;
-        case 'INVALID_EMAIL':
-          errorMessage = 'This is not a valid email address.';
-          break;
-        case 'WEAK_PASSWORD':
-          errorMessage = 'The password is too weak.';
-          break;
-        case 'EMAIL_NOT_FOUND':
-          errorMessage = 'Could not find a user with that email and password.';
-          break;
-        case 'INVALID_PASSWORD':
-          errorMessage = 'Could not find a user with that email and password.';
-          break;
-        default:
-          errorMessage = 'Could not authenticate you.  Please try again later:\n ${error.toString()}';
-      }
-      debugPrint('!!! $error, $errorMessage');
-      _showErrorDialog(errorMessage);
-    } catch (error) {
-      var errorMessage = 'Could not authenticate you.  Please try again later:\n ${error.toString()}';
-      debugPrint('!!! $error, $errorMessage');
-      _showErrorDialog(errorMessage);
-    }
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  void _switchAuthMode() {
-    if (_authMode == AuthMode.Login) {
-      setState(() {
-        _authMode = AuthMode.Signup;
-      });
-      _animationController!.forward();
-    } else {
-      setState(() {
-        _authMode = AuthMode.Login;
-      });
-      _animationController!.reverse();
-    }
   }
 
   @override
@@ -281,5 +193,94 @@ class _AuthCardState extends State<AuthCard> with SingleTickerProviderStateMixin
         ),
       ),
     );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('An error occurred'),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            child: Text('OK'),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+            },
+          )
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      // Invalid!
+      return;
+    }
+    _formKey.currentState!.save();
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (_authMode == AuthMode.Login) {
+        // Log user in
+        await Provider.of<AuthenticationService>(context, listen: false).signIn(
+          email: _authData['email']!,
+          password: _authData['password']!,
+        );
+      } else {
+        // Sign user up
+        await Provider.of<AuthenticationService>(context, listen: false).signUp(
+          email: _authData['email']!,
+          password: _authData['password']!,
+        );
+      }
+    } on HttpException catch (error) {
+      var errorMessage = 'Authentication failed';
+      switch (error.toString()) {
+        case 'EMAIL_EXISTS':
+          errorMessage = 'The email address is already in use.';
+          break;
+        case 'INVALID_EMAIL':
+          errorMessage = 'This is not a valid email address.';
+          break;
+        case 'WEAK_PASSWORD':
+          errorMessage = 'The password is too weak.';
+          break;
+        case 'EMAIL_NOT_FOUND':
+          errorMessage = 'Could not find a user with that email and password.';
+          break;
+        case 'INVALID_PASSWORD':
+          errorMessage = 'Could not find a user with that email and password.';
+          break;
+        default:
+          errorMessage = 'Could not authenticate you.  Please try again later:\n ${error.toString()}';
+      }
+      debugPrint('!!! $error, $errorMessage');
+      _showErrorDialog(errorMessage);
+    } catch (error) {
+      var errorMessage = 'Could not authenticate you.  Please try again later:\n ${error.toString()}';
+      debugPrint('!!! $error, $errorMessage');
+      _showErrorDialog(errorMessage);
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  void _switchAuthMode() {
+    if (_authMode == AuthMode.Login) {
+      setState(() {
+        _authMode = AuthMode.Signup;
+      });
+      _animationController!.forward();
+    } else {
+      setState(() {
+        _authMode = AuthMode.Login;
+      });
+      _animationController!.reverse();
+    }
   }
 }
