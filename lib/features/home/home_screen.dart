@@ -3,12 +3,11 @@ import 'package:alconometer/features/diary/diary_screen.dart';
 import 'package:alconometer/features/drinks/drinks_screen.dart';
 import 'package:alconometer/features/home/home_menu.dart';
 import 'package:alconometer/features/settings/settings_screen.dart';
-import 'package:alconometer/providers/app_state_manager.dart';
-import 'package:alconometer/widgets/custom_app_bar.dart';
+import 'package:alconometer/providers/app_state.dart';
 import 'package:alconometer/widgets/modal_bottom_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum bottomTab { diary, drinks, data, settings }
 
@@ -32,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void initState() {
+    debugPrint('>>> HomeScreen >>>');
     super.initState();
     _initController();
   }
@@ -49,137 +49,74 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   @override
-  Widget _build(BuildContext context) {
-    return Consumer<AppStateManager>(
-      builder: (ctx, appStateManager, child) {
-        return Scaffold(
-          appBar: CustomAppBar(title: Text('App Bar')),
-/*          body: SafeArea(
-            //bottom: false,
-            child: IndexedStack(index: appStateManager.selectedBottomTab, children: _pages),
-          ),*/
-          body: ListView(padding: const EdgeInsets.only(bottom: 88), children: <Widget>[
-            Text('one'),
-            Text('two'),
-            Text('thr'),
-            Text('for'),
-            Text('giv'),
-          ]),
-          floatingActionButton: FloatingActionButton(
-            elevation: 0,
-            child: const Icon(Icons.add, size: 36.0),
-            onPressed: () async {
-              _addButtonPressed(index: appStateManager.selectedBottomTab);
-            },
-            mini: true,
-            isExtended: true,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-/*              side: const BorderSide(
-                width: 1.0,
-                color: Colors.transparent,
-              ),*/
-            ),
-          ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: BottomAppBar(
-            color: Colors.blueGrey,
-            notchMargin: 0,
-            shape: AutomaticNotchedShape(
-              RoundedRectangleBorder(
-                  //borderRadius: BorderRadius.circular(12.0),
-                  ),
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                side: BorderSide(),
-              ),
-            ),
-            child: Container(
-              height: 55,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Text('one'),
-                  Text('four'),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Consumer<AppStateManager>(
-      builder: (ctx, appStateManager, child) {
-        return Scaffold(
-          body: SafeArea(
-            //bottom: false,
-            child: IndexedStack(index: appStateManager.selectedBottomTab, children: _pages),
-          ),
-          bottomNavigationBar: BottomAppBar(
-            notchMargin: 0,
-            shape: AutomaticNotchedShape(
-              const RoundedRectangleBorder(),
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                side: BorderSide(width: 1.0, style: BorderStyle.solid),
-              ),
-            ),
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              type: BottomNavigationBarType.fixed,
-              elevation: 0,
-              items: const <BottomNavigationBarItem>[
-                BottomNavigationBarItem(
-                  label: 'DIARY',
-                  icon: Icon(Icons.calendar_view_month_outlined),
-                ),
-                BottomNavigationBarItem(
-                  label: 'DRINKS',
-                  icon: Icon(
-                    Icons.sports_bar_outlined,
-                  ),
-                ),
-                BottomNavigationBarItem(
-                  label: 'DATA',
-                  icon: Icon(
-                    Icons.bar_chart_outlined,
-                  ),
-                ),
-                BottomNavigationBarItem(
-                  label: 'SETTINGS',
-                  icon: Icon(
-                    Icons.settings,
-                  ),
-                ),
-              ],
-              currentIndex: appStateManager.selectedBottomTab,
-              onTap: appStateManager.goToBottomTab,
+    return Consumer(builder: (context, WidgetRef ref, __) {
+      final appState = ref.watch(appStateProvider);
+      return Scaffold(
+        body: SafeArea(
+          //bottom: false,
+          child: IndexedStack(index: appState.selectedBottomTab, children: _pages),
+        ),
+        bottomNavigationBar: BottomAppBar(
+          notchMargin: 0,
+          shape: AutomaticNotchedShape(
+            const RoundedRectangleBorder(),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              side: BorderSide(width: 1.0, style: BorderStyle.solid),
             ),
           ),
-          floatingActionButton: FloatingActionButton(
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            type: BottomNavigationBarType.fixed,
             elevation: 0,
-            child: const Icon(Icons.add, size: 36.0),
-            onPressed: () async {
-              _addButtonPressed(index: appStateManager.selectedBottomTab);
-            },
-            mini: true,
-            isExtended: true,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-              side: const BorderSide(
-                width: 3.0,
-                color: Colors.transparent,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                label: 'DIARY',
+                icon: Icon(Icons.calendar_view_month_outlined),
               ),
+              BottomNavigationBarItem(
+                label: 'DRINKS',
+                icon: Icon(
+                  Icons.sports_bar_outlined,
+                ),
+              ),
+              BottomNavigationBarItem(
+                label: 'DATA',
+                icon: Icon(
+                  Icons.bar_chart_outlined,
+                ),
+              ),
+              BottomNavigationBarItem(
+                label: 'SETTINGS',
+                icon: Icon(
+                  Icons.settings,
+                ),
+              ),
+            ],
+            currentIndex: appState.selectedBottomTab!,
+            onTap: ref.read(appStateProvider.notifier).goToBottomTab,
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          elevation: 0,
+          child: const Icon(Icons.add, size: 36.0),
+          onPressed: () async {
+            _addButtonPressed(index: appState.selectedBottomTab!);
+          },
+          mini: true,
+          isExtended: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            side: const BorderSide(
+              width: 3.0,
+              color: Colors.transparent,
             ),
           ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        );
-      },
-    );
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      );
+    });
   }
 
   Widget _getChild({required int index}) {

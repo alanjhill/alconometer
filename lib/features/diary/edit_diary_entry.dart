@@ -2,14 +2,14 @@ import 'package:alconometer/providers/diary_entries.dart';
 import 'package:alconometer/providers/diary_entry.dart';
 import 'package:alconometer/providers/drink.dart';
 import 'package:alconometer/providers/drinks.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
 import 'package:alconometer/theme/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:searchfield/searchfield.dart';
 import 'package:search_choices/search_choices.dart';
 
 class EditDiaryEntryArguments {
@@ -19,7 +19,7 @@ class EditDiaryEntryArguments {
   final String? id;
 }
 
-class EditDiaryEntry extends StatefulWidget {
+class EditDiaryEntry extends ConsumerStatefulWidget {
   static const routeName = '/edit-diary-entry';
   const EditDiaryEntry({Key? key, required this.args}) : super(key: key);
   final EditDiaryEntryArguments args;
@@ -28,7 +28,7 @@ class EditDiaryEntry extends StatefulWidget {
   _EditDiaryEntryState createState() => _EditDiaryEntryState();
 }
 
-class _EditDiaryEntryState extends State<EditDiaryEntry> {
+class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
   //final _drinkFocusNode = FocusNode();
   //final _volumeFocusNode = FocusNode();
   //final _dateTimeNode = FocusNode();
@@ -47,7 +47,8 @@ class _EditDiaryEntryState extends State<EditDiaryEntry> {
   void initState() {
     super.initState();
     if (widget.args.id != null) {
-      _editedDiaryEntry = Provider.of<DiaryEntries>(context, listen: false).findById(widget.args.id!);
+      final diaryEntries = ref.read(diaryEntriesProvider.notifier);
+      _editedDiaryEntry = diaryEntries.findById(widget.args.id!);
       _drinkTextController.text = _editedDiaryEntry.drink!.name;
     }
     _dateTextController.text = DateFormat('yyyy-MM-dd').format(_editedDiaryEntry.dateTime!);
@@ -61,7 +62,8 @@ class _EditDiaryEntryState extends State<EditDiaryEntry> {
 
   @override
   Widget build(BuildContext context) {
-    final drinks = Provider.of<Drinks>(context).items;
+    final drinks = ref.read(drinksProvider);
+    final drinksList = drinks;
     return Scaffold(
       appBar: AppBar(title: Text(widget.args.drink != null ? widget.args.drink!.name : 'Add Diary Entry')),
       body: SingleChildScrollView(
@@ -80,7 +82,7 @@ class _EditDiaryEntryState extends State<EditDiaryEntry> {
                 children: [
                   // Drinks
                   const SizedBox(height: 16.0),
-                  buildDrinkSelect(context, drinks),
+                  buildDrinkSelect(context, drinksList),
                   buildVolumeField(),
                   buildDateField(context),
                   buildTimeField(context),
@@ -269,9 +271,10 @@ class _EditDiaryEntryState extends State<EditDiaryEntry> {
             }),
         const SizedBox(width: 16.0),
         ElevatedButton(
-          child: const Text('Save'),
-          onPressed: _saveForm,
-        ),
+            child: const Text('Save'),
+            onPressed: () {
+              _saveForm(ref);
+            }),
       ],
     );
   }
@@ -327,7 +330,7 @@ class _EditDiaryEntryState extends State<EditDiaryEntry> {
     return borderBox;
   }
 
-  Future<void> _saveForm() async {
+  Future<void> _saveForm(WidgetRef ref) async {
     debugPrint('>>> _saveForm()');
     final isValid = _formKey.currentState!.validate();
     if (!isValid) {
@@ -339,10 +342,11 @@ class _EditDiaryEntryState extends State<EditDiaryEntry> {
       _isLoading = true;
     });
 
+    final diaryEntriesNotifier = ref.read(diaryEntriesProvider.notifier);
     if (_editedDiaryEntry.id == null) {
-      await Provider.of<DiaryEntries>(context, listen: false).addDiaryEntry(_editedDiaryEntry);
+      await diaryEntriesNotifier.addDiaryEntry(_editedDiaryEntry);
     } else {
-      await Provider.of<DiaryEntries>(context, listen: false).updateDiaryEntry(_editedDiaryEntry.id!, _editedDiaryEntry);
+      await diaryEntriesNotifier.updateDiaryEntry(_editedDiaryEntry.id!, _editedDiaryEntry);
     }
 
     setState(() {

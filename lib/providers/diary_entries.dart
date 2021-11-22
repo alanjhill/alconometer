@@ -3,59 +3,110 @@ import 'dart:convert';
 import 'package:alconometer/models/http_exception.dart';
 import 'package:alconometer/providers/diary_entry.dart';
 import 'package:alconometer/providers/drink.dart';
+import 'package:alconometer/providers/drinks.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
+import 'package:alconometer/services/api_service.dart';
 import 'package:alconometer/utils/utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:week_of_year/week_of_year.dart';
 
-class DiaryEntries with ChangeNotifier {
-  DiaryEntries(this._authToken, this._userId, this._items);
-  final String? _authToken;
-  final String? _userId;
-  List<DiaryEntry>? _items = [];
+/*final diaryEntriesProvider = StateNotifierProvider<DiaryEntriesProvider, List<DiaryEntry>>(
+  (ref) {
+    final apiService = ref.watch(apiServiceProvider);
+    debugPrint('>>> apiService: $apiService');
+    return DiaryEntriesProvider(apiService);
+  },
+);*/
 
-  DiaryEntries.emptyValues([this._items = const [], this._authToken, this._userId]);
+final diaryEntriesProvider = StateNotifierProvider<DiaryEntriesProvider, List<DiaryEntry>>(
+  (ref) {
+    final auth = ref.watch(authStateChangesProvider);
+    if (auth.asData?.value != null) {
+      final user = auth.asData!.value;
+      return DiaryEntriesProvider(user);
+    }
+    return DiaryEntriesProvider(null);
+  },
+);
 
-  List<DiaryEntry> get items {
-    return [..._items!];
-  }
+final diaryEntriesByDate = FutureProvider.autoDispose.family<List<DiaryEntry>, DateTime>((ref, dateTime) async {
+  final diaryEntries = ref.watch(diaryEntriesProvider.notifier);
+  final result = diaryEntries.findByDate(dateTime);
+  return Future.value(result);
+});
 
+/*final getDiaryEntries = FutureProvider.autoDispose<List<DiaryEntry>>((ref) async {
+  final diaryEntries = ref.watch(diaryEntriesProvider);
+  final drinks = ref.watch(drinksProvider);
+  final result = await diaryEntries.stfetchDiaryEntries(drinks);
+  return result;
+});
+
+final filterDiaryEntriesByDate = FutureProvider.autoDispose.family<List<DiaryEntry>, DateTime>((ref, dateTime) async {
+  final diaryEntries = ref.watch(diaryEntriesProvider);
+  final drinks = ref.watch(drinksProvider);
+  final result = await diaryEntries.fetchDiaryEntries(drinks);
+  return result;
+});*/
+
+class DiaryEntriesProvider extends StateNotifier<List<DiaryEntry>> {
+  // Constructors
+  DiaryEntriesProvider(this.user, [state]) : super(state ?? []);
+
+  User? user;
+  bool _loaded = false;
+  bool _loading = false;
+
+  // Getters
+  bool get loaded => _loaded;
+  bool get loading => _loading;
+
+  // Methods
   DiaryEntry findById(String id) {
-    return _items!.firstWhere((diaryEntry) => diaryEntry.id == id);
+    return state.firstWhere((diaryEntry) => diaryEntry.id == id);
   }
 
   List<DiaryEntry> findByDate(DateTime dateTime) {
-    final diaryEntries = _items!.where((diaryEntry) => diaryEntry.dateTime!.day == dateTime.day).toList();
+    final diaryEntries = state.where((diaryEntry) => diaryEntry.dateTime!.day == dateTime.day).toList();
     debugPrint('diaryEntries: $diaryEntries');
     return diaryEntries;
   }
 
   List<DiaryEntry> findByWeek(int weekOfYear) {
-    final diaryEntries = _items!.where((diaryEntry) => diaryEntry.dateTime!.weekOfYear == weekOfYear).toList();
+    final diaryEntries = state.where((diaryEntry) => diaryEntry.dateTime!.weekOfYear == weekOfYear).toList();
     debugPrint('diaryEntries: $diaryEntries');
     return diaryEntries;
   }
 
-  Future<void> fetchDiaryEntries(List<Drink> drinks) async {
-    var queryParameters = {'auth': _authToken};
+  Future<List<DiaryEntry>> fetchDiaryEntries([List<Drink>? drinks]) async {
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+
+    _loaded = false;
+    _loading = true;
+
+    var queryParameters = {'auth': authToken};
     queryParameters.addAll({
       'orderBy': '"dateTime"',
     });
 
-    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$_userId.json', queryParameters);
+    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$userId.json', queryParameters);
 
     try {
       final response = await http.get(url);
       final Map<String, dynamic>? extractedData = json.decode(response.body);
       if (extractedData == null) {
-        return;
+        return [];
       }
 
       final List<DiaryEntry> loadedDiaryEntries = [];
       extractedData.forEach((diaryEntryId, diaryEntryData) {
         final drinkId = diaryEntryData['drinkId'];
-        final drink = drinks.firstWhere((drink) => drink.id == drinkId);
         final volume = diaryEntryData['volume'];
+        final drink = drinks!.firstWhere((drink) => drink.id == drinkId);
         final units = calculateUnits(drink.abv!, volume);
         loadedDiaryEntries.add(DiaryEntry(
           id: diaryEntryId,
@@ -65,8 +116,11 @@ class DiaryEntries with ChangeNotifier {
           units: units,
         ));
       });
-      _items = loadedDiaryEntries;
-      notifyListeners();
+      state = loadedDiaryEntries;
+      debugPrint('diaryEntries; $state');
+      _loaded = true;
+      _loading = false;
+      return state;
     } catch (error) {
       debugPrint(error.toString());
       rethrow;
@@ -74,7 +128,10 @@ class DiaryEntries with ChangeNotifier {
   }
 
   Future<void> addDiaryEntry(DiaryEntry diaryEntry) async {
-    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$_userId.json', {'auth': _authToken});
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+
+    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$userId.json', {'auth': authToken});
 
     try {
       final response = await http.post(
@@ -99,10 +156,11 @@ class DiaryEntries with ChangeNotifier {
         units: calculateUnits(diaryEntry.drink!.abv!, diaryEntry.volume!),
       );
 
-      _items!.insert(0, newDiaryEntry);
+      // TODO: Sort out the sort!
+      state = [newDiaryEntry, ...state];
+      _sortDiaryEntries();
 
       // Now we can notify the listeners
-      notifyListeners();
     } catch (error) {
       debugPrint('!!! $error');
       rethrow;
@@ -110,9 +168,12 @@ class DiaryEntries with ChangeNotifier {
   }
 
   Future<void> updateDiaryEntry(String diaryEntryId, DiaryEntry diaryEntry) async {
-    final existingDiaryEntryIndex = _items!.indexWhere((diaryEntry) => diaryEntry.id == diaryEntryId);
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+
+    final existingDiaryEntryIndex = state.indexWhere((diaryEntry) => diaryEntry.id == diaryEntryId);
     if (existingDiaryEntryIndex >= 0) {
-      final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$_userId/$diaryEntryId.json', {'auth': _authToken});
+      final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$userId/$diaryEntryId.json', {'auth': authToken});
 
       try {
         final response = await http.patch(
@@ -131,8 +192,8 @@ class DiaryEntries with ChangeNotifier {
           throw HttpException('Could not update diary entry.');
         }
 
-        _items![existingDiaryEntryIndex] = diaryEntry;
-        notifyListeners();
+        state[existingDiaryEntryIndex] = diaryEntry;
+        _sortDiaryEntries();
       } catch (error) {
         debugPrint(error.toString());
         rethrow;
@@ -140,10 +201,14 @@ class DiaryEntries with ChangeNotifier {
     }
   }
 
+  void _sortDiaryEntries() {
+    state.sort((DiaryEntry a, DiaryEntry b) => a.dateTime!.compareTo(b.dateTime!));
+  }
+
   void refreshDiaryEntries(Drink drink) {
-    _items!.where((DiaryEntry diaryEntry) => diaryEntry.drink!.id == drink.id).forEach((diaryEntry) {
-      final diaryEntryIndex = _items!.indexWhere((item) => item.id == diaryEntry.id);
-      _items![diaryEntryIndex] = diaryEntry.copyWith(
+    state.where((DiaryEntry diaryEntry) => diaryEntry.drink!.id == drink.id).forEach((diaryEntry) {
+      final diaryEntryIndex = state.indexWhere((item) => item.id == diaryEntry.id);
+      state[diaryEntryIndex] = diaryEntry.copyWith(
         drink: drink,
         units: calculateUnits(drink.abv!, diaryEntry.volume!),
       );
@@ -151,19 +216,20 @@ class DiaryEntries with ChangeNotifier {
   }
 
   Future<void> deleteDiaryEntry(String diaryEntryId) async {
-    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$_userId/$diaryEntryId.json', {'auth': _authToken});
-    int? existingDiaryEntryIndex = _items!.indexWhere((diaryEntry) => diaryEntry.id == diaryEntryId);
-    var existingDiaryEntry = _items![existingDiaryEntryIndex];
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+
+    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/diaryEntries/$userId/$diaryEntryId.json', {'auth': authToken});
+    int? existingDiaryEntryIndex = state.indexWhere((diaryEntry) => diaryEntry.id == diaryEntryId);
+    var existingDiaryEntry = state[existingDiaryEntryIndex];
     final response = await http.delete(url);
 
     if (response.statusCode >= 400) {
-      _items!.insert(existingDiaryEntryIndex, existingDiaryEntry);
-      notifyListeners();
+      state.insert(existingDiaryEntryIndex, existingDiaryEntry);
       throw HttpException('Could not delete diary entry.');
     } else {
-      _items!.removeAt(existingDiaryEntryIndex);
+      state.removeAt(existingDiaryEntryIndex);
       existingDiaryEntryIndex = null;
-      notifyListeners();
     }
   }
 
@@ -171,8 +237,10 @@ class DiaryEntries with ChangeNotifier {
     final duplicatedDiaryEntry = diaryEntry.copyWith(id: null);
     try {
       await addDiaryEntry(duplicatedDiaryEntry);
+      state = state;
     } catch (error) {
       debugPrint(error.toString());
     }
+    _sortDiaryEntries();
   }
 }

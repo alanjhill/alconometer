@@ -35,7 +35,7 @@ class AppCache {
 
   Future<int> getWeeklyAllowance() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(kWeeklyAllowance)!;
+    return prefs.getInt(kWeeklyAllowance) ?? 0;
   }
 
   Future<String> getUnitsOfMeasure() async {

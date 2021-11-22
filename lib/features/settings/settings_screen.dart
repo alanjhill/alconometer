@@ -1,11 +1,11 @@
-import 'package:alconometer/constants.dart';
 import 'package:alconometer/providers/app_settings_manager.dart';
-import 'package:alconometer/providers/app_state_manager.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
+import 'package:alconometer/services/authentication_service.dart';
 import 'package:alconometer/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   static const routeName = '/settings';
 
   SettingsScreen({Key? key}) : super(key: key);
@@ -13,17 +13,19 @@ class SettingsScreen extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: CustomAppBar(
         title: const Text('Settings'),
       ),
       body: SingleChildScrollView(
         physics: const ScrollPhysics(),
-        child: Container(
-          child: Form(
-            key: _formKey,
-            child: Column(mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
               WeeklyAllowanceSetting(),
               SizedBox(height: 16.0),
               UnitsOfMeasureSetting(),
@@ -31,7 +33,8 @@ class SettingsScreen extends StatelessWidget {
               DateFormatSetting(),
               SizedBox(),
               DarkMode(),
-            ]),
+              LogoutButton(),
+            ],
           ),
         ),
       ),
@@ -39,14 +42,14 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class WeeklyAllowanceSetting extends StatefulWidget {
+class WeeklyAllowanceSetting extends ConsumerStatefulWidget {
   const WeeklyAllowanceSetting({Key? key}) : super(key: key);
 
   @override
   _WeeklyAllowanceSettingState createState() => _WeeklyAllowanceSettingState();
 }
 
-class _WeeklyAllowanceSettingState extends State<WeeklyAllowanceSetting> {
+class _WeeklyAllowanceSettingState extends ConsumerState<WeeklyAllowanceSetting> with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
 
   @override
@@ -58,7 +61,7 @@ class _WeeklyAllowanceSettingState extends State<WeeklyAllowanceSetting> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 64.0),
             child: TextFormField(
-              initialValue: Provider.of<AppSettingsManager>(context, listen: false).weeklyAllowance.toString(),
+              initialValue: ref.read(appSettingsManagerProvider).weeklyAllowance.toString(),
               decoration: const InputDecoration(labelText: 'Weekly units', labelStyle: TextStyle(color: Colors.grey)),
               keyboardType: TextInputType.number,
               validator: (value) {
@@ -70,7 +73,7 @@ class _WeeklyAllowanceSettingState extends State<WeeklyAllowanceSetting> {
               onChanged: (value) {
                 debugPrint('allowance: $value');
                 if (value != null && value.isNotEmpty) {
-                  Provider.of<AppSettingsManager>(context, listen: false).setWeeklyAllowance(int.parse(value));
+                  ref.read(appSettingsManagerProvider).setWeeklyAllowance(int.parse(value));
                 }
               },
             ),
@@ -81,14 +84,14 @@ class _WeeklyAllowanceSettingState extends State<WeeklyAllowanceSetting> {
   }
 }
 
-class UnitsOfMeasureSetting extends StatefulWidget {
+class UnitsOfMeasureSetting extends ConsumerStatefulWidget {
   const UnitsOfMeasureSetting({Key? key}) : super(key: key);
 
   @override
   _UnitsOfMeasureSettingState createState() => _UnitsOfMeasureSettingState();
 }
 
-class _UnitsOfMeasureSettingState extends State<UnitsOfMeasureSetting> {
+class _UnitsOfMeasureSettingState extends ConsumerState<UnitsOfMeasureSetting> {
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -103,14 +106,14 @@ class _UnitsOfMeasureSettingState extends State<UnitsOfMeasureSetting> {
               child: DropdownButton<String>(
                 hint: Text('Units of measure'),
                 isExpanded: false,
-                value: Provider.of<AppSettingsManager>(context, listen: false).unitsOfMeasure,
+                value: ref.read(appSettingsManagerProvider).unitsOfMeasure,
                 icon: const Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 onChanged: (value) async {
                   debugPrint('unitsOfMeasure: $value');
                   if (value != null) {
-                    await Provider.of<AppSettingsManager>(context, listen: false).setUnitsOfMeasure(value);
+                    await ref.read(appSettingsManagerProvider).setUnitsOfMeasure(value);
                   }
                 },
                 items: AppSettings.unitsOfMeasure.map((String dateFormat) {
@@ -130,16 +133,18 @@ class _UnitsOfMeasureSettingState extends State<UnitsOfMeasureSetting> {
   }
 }
 
-class DateFormatSetting extends StatefulWidget {
+class DateFormatSetting extends ConsumerStatefulWidget {
   const DateFormatSetting({Key? key}) : super(key: key);
 
   @override
   _DateFormatSettingState createState() => _DateFormatSettingState();
 }
 
-class _DateFormatSettingState extends State<DateFormatSetting> {
+class _DateFormatSettingState extends ConsumerState<DateFormatSetting> {
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -152,14 +157,14 @@ class _DateFormatSettingState extends State<DateFormatSetting> {
               child: DropdownButton<String>(
                 hint: Text('Date format'),
                 isExpanded: false,
-                value: Provider.of<AppSettingsManager>(context, listen: false).dateFormat,
+                value: ref.read(appSettingsManagerProvider).dateFormat,
                 icon: const Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 onChanged: (value) async {
                   debugPrint('allowance: $value');
                   if (value != null) {
-                    await Provider.of<AppSettingsManager>(context, listen: false).setDateFormat(value);
+                    await ref.read(appSettingsManagerProvider).setDateFormat(value);
                   }
                 },
                 items: AppSettings.dateFormats.map((String dateFormat) {
@@ -179,11 +184,11 @@ class _DateFormatSettingState extends State<DateFormatSetting> {
   }
 }
 
-class DarkMode extends StatelessWidget {
+class DarkMode extends ConsumerWidget {
   const DarkMode({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -191,21 +196,39 @@ class DarkMode extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 64.0),
             child: ButtonTheme(
-              padding: const EdgeInsets.symmetric(horizontal: 64.0),
-              child: Consumer<AppSettingsManager>(builder: (context, appSettingsManager, child) {
-                return Switch(
-                  value: appSettingsManager.darkMode,
+                padding: const EdgeInsets.symmetric(horizontal: 64.0),
+                child: Switch(
+                  value: ref.watch(appSettingsManagerProvider).darkMode,
                   onChanged: (value) async {
                     debugPrint('allowance: $value');
                     if (value != null) {
-                      await appSettingsManager.setDarkMode(value);
+                      await ref.watch(appSettingsManagerProvider).setDarkMode(value);
                     }
                   },
-                );
-              }),
-            ),
+                )),
           ),
         )
+      ],
+    );
+  }
+}
+
+class LogoutButton extends ConsumerWidget {
+  const LogoutButton({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Text(ref.read(authenticationServiceProvider).isLoggedIn() ? 'Logged In' : 'Not Logged In'),
+        ElevatedButton(
+          child: const Text('LOGOUT'),
+          onPressed: () async {
+            await ref.read(authenticationServiceProvider).signOut();
+            await Navigator.of(context).pushReplacementNamed('/');
+          },
+        ),
       ],
     );
   }

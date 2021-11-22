@@ -35,6 +35,11 @@ class Drink {
     debugPrint('filter: $filter');
     return name.contains(filter);
   }
+
+  @override
+  String toString() {
+    return 'Drink{id: $id, name: $name, type: $type, abv: $abv}';
+  }
 }
 
 final beer = Drink(id: '', name: 'BRIDGE BREWING IRONWORKERS IPA', type: DrinkType.beer, abv: 0.05);

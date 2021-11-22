@@ -1,12 +1,13 @@
-import 'package:alconometer/features/home/drinks_tab_manager.dart';
+import 'package:alconometer/features/drinks/drinks_state.dart';
 import 'package:alconometer/features/home/tab_manager.dart';
 import 'package:alconometer/providers/diary_entries.dart';
 import 'package:alconometer/providers/drink.dart';
 import 'package:alconometer/providers/drinks.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
 import 'package:alconometer/utils/utils.dart';
 import 'package:alconometer/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:select_form_field/select_form_field.dart';
 
 class EditDrinkArguments {
@@ -15,7 +16,7 @@ class EditDrinkArguments {
   final String? id;
 }
 
-class EditDrink extends StatefulWidget {
+class EditDrink extends ConsumerStatefulWidget {
   static const routeName = '/edit-drink';
   EditDrink({Key? key, required this.args}) : super(key: key);
   final EditDrinkArguments args;
@@ -24,7 +25,7 @@ class EditDrink extends StatefulWidget {
   _EditDrinkState createState() => _EditDrinkState();
 }
 
-class _EditDrinkState extends State<EditDrink> {
+class _EditDrinkState extends ConsumerState<EditDrink> {
   //final _drinkTypeController = TextEditingController();
   //final _nameController = TextEditingController();
   //final _abvController = TextEditingController();
@@ -60,7 +61,8 @@ class _EditDrinkState extends State<EditDrink> {
         abv: _editedDrink.abv,
       );
     } else {
-      _editedDrink = Provider.of<Drinks>(context, listen: false).findById(widget.args.id!);
+      final drinks = ref.read(drinksProvider.notifier);
+      _editedDrink = drinks.findById(widget.args.id!);
     }
 
 /*    _initialValues = {
@@ -170,13 +172,16 @@ class _EditDrinkState extends State<EditDrink> {
       _isLoading = true;
     });
 
+    final drinks = ref.read(drinksProvider.notifier);
     if (_editedDrink.id == null) {
-      await Provider.of<Drinks>(context, listen: false).addDrink(_editedDrink);
-      Provider.of<TabManager>(context, listen: false).goToDrinks();
-      Provider.of<DrinksTabManager>(context, listen: false).goToTab(_editedDrink.type);
+      await drinks.addDrink(_editedDrink);
+      final tabManager = ref.read(tabManagerProvider);
+      tabManager.goToDrinks();
+      //tabManager.goToTab(_editedDrink.type);
     } else {
-      await Provider.of<Drinks>(context, listen: false).updateDrink(_editedDrink.id!, _editedDrink);
-      Provider.of<DiaryEntries>(context, listen: false).refreshDiaryEntries(_editedDrink);
+      await drinks.updateDrink(_editedDrink.id!, _editedDrink);
+      final diaryEntries = ref.read(diaryEntriesProvider.notifier);
+      diaryEntries.refreshDiaryEntries(_editedDrink);
     }
 
     setState(() {

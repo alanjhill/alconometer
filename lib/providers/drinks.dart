@@ -1,42 +1,89 @@
 import 'dart:convert';
 
 import 'package:alconometer/providers/drink.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
+import 'package:alconometer/services/api_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-class Drinks with ChangeNotifier {
-  Drinks(this._authToken, this._userId, this._items);
-  final String? _authToken;
-  final String? _userId;
+final drinksProvider = StateNotifierProvider<DrinksProvider, List<Drink>>((ref) {
+  final auth = ref.watch(authStateChangesProvider);
 
-  List<Drink>? _items = [];
-
-  Drinks.emptyValues([this._items = const [], this._authToken, this._userId]);
-
-  List<Drink> get items {
-    return [..._items!];
+  if (auth.asData?.value != null) {
+    final user = auth.asData!.value;
+    return DrinksProvider(user);
   }
+  //return DrinksProvider('', '');
+  throw UnimplementedError();
+});
+
+/*final drinksProvider = Provider<DrinksProvider>(
+  (ref) {
+    final auth = ref.watch(authStateChangesProvider);
+    final firebaseAuth = ref.read(firebaseAuthProvider);
+
+    final user = auth.asData!.value;
+    if (user?.uid != null) {
+      String userId = user!.uid;
+      String? idToken;
+      firebaseAuth.currentUser!.getIdToken().then((value) {
+        idToken = value;
+      });
+      debugPrint('idToken: $idToken');
+      return DrinksProvider(userId, idToken!);
+    }
+    throw UnimplementedError();
+  },
+);*/
+
+final getDrinks = FutureProvider.autoDispose<List<Drink>>((ref) async {
+  final drinks = ref.watch(drinksProvider.notifier);
+  return drinks.fetchDrinks();
+});
+
+class DrinksProvider extends StateNotifier<List<Drink>> {
+  DrinksProvider(this.user, [state]) : super(state ?? []);
+
+  User? user;
+
+  bool _loaded = false;
+  bool _loading = false;
+
+  bool get loaded => _loaded;
+  bool get loading => _loading;
 
   Drink findById(String id) {
-    return _items!.firstWhere((drink) => drink.id == id);
+    return state.firstWhere((drink) => drink.id == id);
   }
 
-  Future<void> fetchDrinks() async {
-    var queryParameters = {'auth': _authToken};
+  List<Drink> get items => state;
+
+  Future<List<Drink>> fetchDrinks() async {
+    debugPrint('>>> fetchDrinks >>>');
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+
+    _loaded = false;
+    _loading = true;
+
+    var queryParameters = {'auth': authToken};
+
     queryParameters.addAll({
       'orderBy': '"name"',
     });
 
-    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/drinks/$_userId.json', queryParameters);
+    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/drinks/$userId.json', queryParameters);
 
     try {
       final response = await http.get(url);
       final Map<String, dynamic>? extractedData = json.decode(response.body);
       if (extractedData == null) {
-        return;
+        return [];
       }
 
-      final List<Drink> loadedDrinks = [];
+      final loadedDrinks = <Drink>[];
       extractedData.forEach((drinkId, drinkData) {
         loadedDrinks.add(
           Drink(
@@ -50,9 +97,11 @@ class Drinks with ChangeNotifier {
 
       // Sort the drinks
       loadedDrinks.sort((Drink a, Drink b) => a.name.compareTo(b.name));
-
-      _items = loadedDrinks;
-      notifyListeners();
+      state = loadedDrinks;
+      _loaded = true;
+      _loading = false;
+      debugPrint('drinks: $state');
+      return loadedDrinks;
     } catch (error) {
       debugPrint(error.toString());
       rethrow;
@@ -60,7 +109,9 @@ class Drinks with ChangeNotifier {
   }
 
   Future<void> addDrink(Drink drink) async {
-    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/drinks/$_userId.json', {'auth': _authToken});
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+    final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/drinks/$userId.json', {'auth': authToken});
 
     try {
       final response = await http.post(
@@ -83,10 +134,7 @@ class Drinks with ChangeNotifier {
         type: drink.type,
         abv: drink.abv,
       );
-      _items!.insert(0, newDrink);
-
-      // Now we can notify the listeners
-      notifyListeners();
+      state = [newDrink, ...state];
     } catch (error) {
       debugPrint('$error');
       rethrow;
@@ -94,9 +142,11 @@ class Drinks with ChangeNotifier {
   }
 
   Future<void> updateDrink(String drinkId, Drink drink) async {
-    final drinkIndex = _items!.indexWhere((drink) => drink.id == drinkId);
+    final userId = user!.uid;
+    final authToken = await user!.getIdToken();
+    final drinkIndex = state.indexWhere((drink) => drink.id == drinkId);
     if (drinkIndex >= 0) {
-      final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/drinks/$_userId/$drinkId.json', {'auth': _authToken});
+      final url = Uri.https('alconometer-default-rtdb.firebaseio.com', '/drinks/$userId/$drinkId.json', {'auth': authToken});
 
       try {
         final response = await http.patch(
@@ -110,8 +160,7 @@ class Drinks with ChangeNotifier {
           ),
         );
 
-        _items![drinkIndex] = drink;
-        notifyListeners();
+        state[drinkIndex] = drink;
       } catch (error) {
         debugPrint(error.toString());
         rethrow;
@@ -120,12 +169,11 @@ class Drinks with ChangeNotifier {
   }
 
   Future<void> deleteDrink(String drinkId) async {
-    int? existingDrinkIndex = _items!.indexWhere((drink) => drink.id == drinkId);
-    //var existingDrink = _items[existingDrinkIndex];
-
+    List<Drink> tempList = [...state];
+    int? existingDrinkIndex = tempList.indexWhere((drink) => drink.id == drinkId);
     if (existingDrinkIndex >= 0) {
-      _items!.removeAt(existingDrinkIndex);
-      notifyListeners();
+      tempList.removeAt(existingDrinkIndex);
     }
+    state = tempList;
   }
 }

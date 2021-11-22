@@ -1,25 +1,25 @@
 import 'dart:async';
 
-import 'package:alconometer/constants.dart';
 import 'package:alconometer/features/diary/edit_diary_entry.dart';
 import 'package:alconometer/providers/app_settings_manager.dart';
 import 'package:alconometer/providers/diary_entries.dart';
 import 'package:alconometer/providers/diary_entry.dart';
-import 'package:alconometer/theme/palette.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
 import 'package:alconometer/utils/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-class DiaryItem extends StatelessWidget {
+class DiaryItem extends ConsumerWidget {
   final DiaryEntry diaryEntry;
   final int index;
 
   DiaryItem({Key? key, required this.diaryEntry, required this.index});
 
   @override
-  Widget build(BuildContext context) {
-    final darkMode = Provider.of<AppSettingsManager>(context).darkMode;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final darkMode = ref.read(appSettingsManagerProvider).darkMode;
     return Slidable(
       key: Key(diaryEntry.id!),
       movementDuration: const Duration(milliseconds: 500),
@@ -52,7 +52,7 @@ class DiaryItem extends StatelessWidget {
               ),
             );
             if (duplicate!) {
-              await _duplicateDiaryEntry(context, diaryEntry: diaryEntry);
+              await _duplicateDiaryEntry(ref, diaryEntry: diaryEntry);
             }
           },
         )
@@ -84,7 +84,9 @@ class DiaryItem extends StatelessWidget {
               ),
             );
             if (delete!) {
-              await _dismissDiaryEntry(context, id: diaryEntry.id!);
+              await _dismissDiaryEntry(ref, id: diaryEntry.id!);
+            } else {
+              await _duplicateDiaryEntry(ref, diaryEntry: diaryEntry);
             }
           },
         )
@@ -108,13 +110,14 @@ class DiaryItem extends StatelessWidget {
     );
   }
 
-  Future<void> _dismissDiaryEntry(BuildContext context, {required String id}) async {
-    Provider.of<DiaryEntries>(context, listen: false).deleteDiaryEntry(id);
+  Future<void> _dismissDiaryEntry(WidgetRef ref, {required String id}) async {
+    final diaryEntries = ref.read(diaryEntriesProvider.notifier);
+    diaryEntries.deleteDiaryEntry(id);
   }
 
-  Future<bool> _duplicateDiaryEntry(BuildContext context, {required DiaryEntry diaryEntry}) async {
-    Provider.of<DiaryEntries>(context, listen: false).duplicateDiaryEntry(diaryEntry);
-    return true;
+  Future<void> _duplicateDiaryEntry(WidgetRef ref, {required DiaryEntry diaryEntry}) async {
+    final diaryEntries = ref.read(diaryEntriesProvider.notifier);
+    diaryEntries.duplicateDiaryEntry(diaryEntry);
   }
 
   void _editDiaryEntry(BuildContext context, {required String id}) {

@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TabManager extends ChangeNotifier {
-  int selectedTab = 0;
+final tabManagerProvider = Provider<TabManagerNotifier>((ref) => TabManagerNotifier());
+
+class TabManagerNotifier extends StateNotifier<int> {
+  TabManagerNotifier([state]) : super(state ?? 0);
 
   void goToTab(index) {
-    selectedTab = index;
-    notifyListeners();
+    state = index;
   }
 
   void goToDiary() {
-    selectedTab = 0;
-    notifyListeners();
+    state = 0;
   }
 
   void goToDrinks() {
-    selectedTab = 1;
-    notifyListeners();
+    state = 1;
   }
 
   void goToData() {
-    selectedTab = 2;
-    notifyListeners();
+    state = 2;
   }
 
   void goToSettings() {
-    selectedTab = 3;
-    notifyListeners();
+    state = 3;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:alconometer/theme/palette.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AlconometerTheme {
@@ -84,6 +85,10 @@ class AlconometerTheme {
         foregroundColor: Colors.white,
         backgroundColor: Palette.primaryColor,
         shadowColor: Palette.primaryColor,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Palette.primaryColor,
+          statusBarIconBrightness: Brightness.light,
+        ),
       ),
       tabBarTheme: TabBarTheme(
         labelColor: Palette.primaryColor,
@@ -138,6 +143,17 @@ class AlconometerTheme {
       timePickerTheme: TimePickerThemeData(
         entryModeIconColor: Palette.primaryColor,
         dialBackgroundColor: Colors.grey.shade200, //Palette.primaryMaterialColor.shade100,
+        dialTextColor: Palette.primaryColor,
+        hourMinuteTextStyle: const TextStyle(color: Palette.primaryColor, fontSize: 48),
+        hourMinuteColor: Colors.grey.shade200,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: MaterialStateProperty.all(
+          Colors.white,
+        ),
+        trackColor: MaterialStateProperty.all(
+          Palette.primaryMaterialColor.shade500,
+        ),
       ),
     );
   }
@@ -155,6 +171,10 @@ class AlconometerTheme {
         elevation: 2.0,
         foregroundColor: Colors.white,
         backgroundColor: Palette.almostBlack,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Palette.almostBlack,
+          statusBarIconBrightness: Brightness.light,
+        ),
       ),
       tabBarTheme: TabBarTheme(
         labelColor: Palette.primaryColor,
@@ -201,6 +221,14 @@ class AlconometerTheme {
         backgroundColor: Palette.almostBlack,
         entryModeIconColor: Palette.primaryColor,
         dialBackgroundColor: Palette.primaryMaterialColor.shade500,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: MaterialStateProperty.all(
+          Palette.primaryColor,
+        ),
+        trackColor: MaterialStateProperty.all(
+          Palette.primaryColor,
+        ),
       ),
       //colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.blueGrey.shade600, brightness: Brightness.dark),
     );
