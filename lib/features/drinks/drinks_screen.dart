@@ -11,6 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+/// >>> Providers
+final drinksStreamProvider = StreamProvider.autoDispose<List<Drink>>(
+  (ref) {
+    final database = ref.watch(databaseProvider);
+    final dp = DrinksProvider(database);
+    return dp.myDrinksStream;
+  },
+);
+
 class DrinksScreen extends StatefulWidget {
   static const routeName = '/drinks';
 
@@ -123,10 +132,13 @@ class _DrinksTabs extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final drinks = ref.read(drinksProvider);
+
+    final drinksAsyncValue = ref.watch(drinksStreamProvider);
+
     return TabBarView(
       controller: _tabController,
       children: <Widget>[
-        DrinksTabView(drinkType: DrinkType.beer, drinks: drinks),
+        DrinksTabViewAsync(drinkType: DrinkType.beer, drinks: drinksAsyncValue),
         DrinksTabView(drinkType: DrinkType.wine, drinks: drinks),
         DrinksTabView(drinkType: DrinkType.spirit, drinks: drinks),
       ],

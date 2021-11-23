@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 
 enum DrinkType { unassigned, beer, wine, spirit }
@@ -9,13 +10,27 @@ class Drink {
   final DrinkType type;
   final double? abv;
 
-  const Drink({required this.id, required this.name, required this.type, required this.abv});
+  const Drink({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.abv,
+  });
 
   const Drink.empty()
       : id = null,
         name = '',
         type = DrinkType.unassigned,
         abv = 0.0;
+
+  static Drink fromMap(String key, Map<String, dynamic> drinkJson) {
+    return Drink(
+      id: key,
+      name: drinkJson['name'],
+      type: DrinkType.values.firstWhere((dt) => dt.toString() == drinkJson['type']),
+      abv: drinkJson['abv'],
+    );
+  }
 
   Drink copyWith({
     String? id,

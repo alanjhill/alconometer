@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:alconometer/providers/drink.dart';
 import 'package:alconometer/providers/top_level_providers.dart';
-import 'package:alconometer/services/api_service.dart';
+import 'package:alconometer/services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,10 +10,11 @@ import 'package:http/http.dart' as http;
 
 final drinksProvider = StateNotifierProvider<DrinksProvider, List<Drink>>((ref) {
   final auth = ref.watch(authStateChangesProvider);
+  final database = ref.watch(databaseProvider);
 
   if (auth.asData?.value != null) {
     final user = auth.asData!.value;
-    return DrinksProvider(user);
+    return DrinksProvider(database, user);
   }
   //return DrinksProvider('', '');
   throw UnimplementedError();
@@ -44,8 +45,9 @@ final getDrinks = FutureProvider.autoDispose<List<Drink>>((ref) async {
 });
 
 class DrinksProvider extends StateNotifier<List<Drink>> {
-  DrinksProvider(this.user, [state]) : super(state ?? []);
+  DrinksProvider(this.database, [this.user, state]) : super(state ?? []);
 
+  final Database database;
   User? user;
 
   bool _loaded = false;
@@ -59,6 +61,8 @@ class DrinksProvider extends StateNotifier<List<Drink>> {
   }
 
   List<Drink> get items => state;
+
+  Stream<List<Drink>> get myDrinksStream => database.drinksStream();
 
   Future<List<Drink>> fetchDrinks() async {
     debugPrint('>>> fetchDrinks >>>');

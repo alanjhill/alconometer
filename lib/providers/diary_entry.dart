@@ -5,37 +5,40 @@ import 'package:flutter/foundation.dart';
 class DiaryEntry {
   final String? id;
   final DateTime? dateTime;
-  final Drink? drink;
+  final String? drinkId;
   final double? volume;
   final double? units;
 
   const DiaryEntry({
     required this.id,
     required this.dateTime,
-    required this.drink,
+    required this.drinkId,
     required this.volume,
-    required this.units,
+    this.units,
   });
+
+  static DiaryEntry fromMap(String key, Map<String, dynamic> diaryEntry) {
+    return DiaryEntry(
+      id: key,
+      drinkId: diaryEntry['drinkId'],
+      dateTime: diaryEntry['name'],
+      volume: diaryEntry['volume'],
+    );
+  }
 
   DiaryEntry copyWith({
     String? id,
     DateTime? dateTime,
-    Drink? drink,
+    String? drinkId,
     double? volume,
     double? units,
   }) {
     return DiaryEntry(
       id: id ?? this.id,
       dateTime: dateTime ?? this.dateTime,
-      drink: drink ?? this.drink,
+      drinkId: drinkId ?? this.drinkId,
       volume: volume ?? this.volume,
       units: units ?? this.units,
     );
   }
 }
-
-final dummyDiaryEntries = [
-  DiaryEntry(id: '', dateTime: DateTime.now(), drink: beer, volume: 473.0, units: 2.5),
-  DiaryEntry(id: '', dateTime: DateTime.now(), drink: beer, volume: 473.0, units: 2.5),
-  DiaryEntry(id: '', dateTime: DateTime.now(), drink: beer, volume: 473.0, units: 2.5),
-];
