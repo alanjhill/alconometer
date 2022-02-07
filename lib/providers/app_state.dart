@@ -1,5 +1,7 @@
-import 'package:alconometer/providers/app_cache.dart';
-import 'package:alconometer/providers/drink.dart';
+import 'package:alconometer/models/drink_type.dart';
+import 'package:alconometer/providers/app_settings.dart';
+import 'package:alconometer/utils/utils.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum DiaryType { day, week }
@@ -17,8 +19,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
   AppStateNotifier()
       : super(AppState(
           loggedIn: false,
-          displayedDate: DateTime.now(),
-          selectedDate: DateTime.now(),
+          displayedDate: getDateTimeNow(),
           drinkType: DrinkType.beer,
           diaryType: DiaryType.day,
           selectedBottomTab: BottomTab.diary,
@@ -35,20 +36,51 @@ class AppStateNotifier extends StateNotifier<AppState> {
   }
 
   void setDisplayedDate(DateTime displayedDate) {
-    final newState = state.copyWith(displayedDate: displayedDate);
+    final utcDate = displayedDate.toUtc();
+    final newState = state.copyWith(displayedDate: utcDate);
     state = newState;
   }
 
-  void setSelectedDate(DateTime selectedDate) {
-    final newState = state.copyWith(selectedDate: selectedDate);
-    state = newState;
+  DateTime get displayedDate {
+    final localDate = displayedDate.toLocal();
+    return localDate;
   }
 
-  void setDiaryType(DiaryType diaryType) {
+  void prevDisplayedDate() {
+    if (state.diaryType == DiaryType.day) {
+      setDisplayedDate(DateTime(state.displayedDate!.year, state.displayedDate!.month, state.displayedDate!.day - 1));
+    } else {
+      setDisplayedDate(DateTime(state.displayedDate!.year, state.displayedDate!.month, state.displayedDate!.day - 7));
+    }
+  }
+
+  void nextDisplayedDate() {
+    if (state.diaryType == DiaryType.day) {
+      setDisplayedDate(DateTime(state.displayedDate!.year, state.displayedDate!.month, state.displayedDate!.day + 1));
+    } else {
+      setDisplayedDate(DateTime(state.displayedDate!.year, state.displayedDate!.month, state.displayedDate!.day + 7));
+    }
+  }
+
+  void setDiaryType(DiaryType diaryType, String firstDayOfWeek) {
     final weekday = state.displayedDate!.weekday;
-
+    debugPrint('>>> setDiaryType: firstDayOfWeek: $firstDayOfWeek, weekday: $weekday');
+    var now = DateTime.now().toLocal();
     if (diaryType == DiaryType.week) {
-      final displayedDate = DateTime(state.displayedDate!.year, state.displayedDate!.month, state.displayedDate!.day).subtract(Duration(days: weekday - 1));
+      var days = 0;
+      final dayOfWeek = firstDayOfWeek == AppSettingsConstants.firstDayOfWeek[0] ? 7 : 1;
+      if (weekday != dayOfWeek) {
+        days = firstDayOfWeek == AppSettingsConstants.firstDayOfWeek[0] ? weekday : weekday - 1;
+      }
+      final displayedDate = DateTime.utc(
+        state.displayedDate!.year,
+        state.displayedDate!.month,
+        state.displayedDate!.day,
+        now.hour,
+        now.minute,
+        now.second,
+        now.microsecond,
+      ).subtract(Duration(days: days));
       final newState = state.copyWith(diaryType: diaryType, displayedDate: displayedDate);
       state = newState;
     } else {
@@ -64,11 +96,8 @@ class AppStateNotifier extends StateNotifier<AppState> {
 }
 
 class AppState {
-  final _appCache = AppCache();
-
   final bool? loggedIn;
   final DateTime? displayedDate;
-  final DateTime? selectedDate;
   final DiaryType? diaryType;
   final DrinkType? drinkType;
   final int? selectedBottomTab;
@@ -76,7 +105,6 @@ class AppState {
   AppState({
     this.loggedIn,
     this.displayedDate,
-    this.selectedDate,
     this.diaryType,
     this.drinkType,
     this.selectedBottomTab,
@@ -85,7 +113,6 @@ class AppState {
   AppState copyWith({
     bool? loggedIn,
     DateTime? displayedDate,
-    DateTime? selectedDate,
     DiaryType? diaryType,
     DrinkType? drinkType,
     int? selectedBottomTab,
@@ -93,12 +120,8 @@ class AppState {
       AppState(
         loggedIn: loggedIn ?? this.loggedIn,
         displayedDate: displayedDate ?? this.displayedDate,
-        selectedDate: selectedDate ?? this.selectedDate,
         drinkType: drinkType ?? this.drinkType,
         diaryType: diaryType ?? this.diaryType,
         selectedBottomTab: selectedBottomTab ?? this.selectedBottomTab,
       );
 }
-/*  void initializeApp(BuildContext context) async {
-    _loggedIn = await _appCache.isUserLoggedIn();
-  }*/

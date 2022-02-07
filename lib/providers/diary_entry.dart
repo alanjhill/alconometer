@@ -1,39 +1,30 @@
-import 'package:alconometer/providers/drink.dart';
 import 'package:flutter/foundation.dart';
 
 @immutable
-class DiaryEntry {
+class AuthToken {
   final String? id;
   final DateTime? dateTime;
   final String? drinkId;
   final double? volume;
   final double? units;
 
-  const DiaryEntry({
-    required this.id,
-    required this.dateTime,
-    required this.drinkId,
-    required this.volume,
-    this.units,
-  });
-
-  static DiaryEntry fromMap(String key, Map<String, dynamic> diaryEntry) {
-    return DiaryEntry(
+  static AuthToken fromMap(String key, Map<String, dynamic> authToken) {
+    return AuthToken(
       id: key,
-      drinkId: diaryEntry['drinkId'],
-      dateTime: diaryEntry['name'],
-      volume: diaryEntry['volume'],
+      drinkId: authToken['drinkId'],
+      dateTime: authToken['name'],
+      volume: authToken['volume'],
     );
   }
 
-  DiaryEntry copyWith({
+  AuthToken copyWith({
     String? id,
     DateTime? dateTime,
     String? drinkId,
     double? volume,
     double? units,
   }) {
-    return DiaryEntry(
+    return AuthToken(
       id: id ?? this.id,
       dateTime: dateTime ?? this.dateTime,
       drinkId: drinkId ?? this.drinkId,
@@ -41,4 +32,12 @@ class DiaryEntry {
       units: units ?? this.units,
     );
   }
+
+  const AuthToken({
+    required this.id,
+    required this.dateTime,
+    required this.drinkId,
+    required this.volume,
+    this.units,
+  });
 }

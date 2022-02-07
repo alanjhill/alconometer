@@ -1,13 +1,4 @@
-import 'dart:convert';
-
-import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/providers/top_level_providers.dart';
-import 'package:alconometer/services/database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-
+/*
 final drinksProvider = StateNotifierProvider<DrinksProvider, List<Drink>>((ref) {
   final auth = ref.watch(authStateChangesProvider);
   final database = ref.watch(databaseProvider);
@@ -19,6 +10,7 @@ final drinksProvider = StateNotifierProvider<DrinksProvider, List<Drink>>((ref) 
   //return DrinksProvider('', '');
   throw UnimplementedError();
 });
+*/
 
 /*final drinksProvider = Provider<DrinksProvider>(
   (ref) {
@@ -39,11 +31,14 @@ final drinksProvider = StateNotifierProvider<DrinksProvider, List<Drink>>((ref) 
   },
 );*/
 
+/*
 final getDrinks = FutureProvider.autoDispose<List<Drink>>((ref) async {
   final drinks = ref.watch(drinksProvider.notifier);
   return drinks.fetchDrinks();
 });
+*/
 
+/*
 class DrinksProvider extends StateNotifier<List<Drink>> {
   DrinksProvider(this.database, [this.user, state]) : super(state ?? []);
 
@@ -181,3 +176,4 @@ class DrinksProvider extends StateNotifier<List<Drink>> {
     state = tempList;
   }
 }
+*/

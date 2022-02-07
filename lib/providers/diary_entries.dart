@@ -1,18 +1,3 @@
-import 'dart:convert';
-
-import 'package:alconometer/models/http_exception.dart';
-import 'package:alconometer/providers/diary_entry.dart';
-import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/providers/drinks.dart';
-import 'package:alconometer/providers/top_level_providers.dart';
-import 'package:alconometer/services/api_service.dart';
-import 'package:alconometer/utils/utils.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import 'package:week_of_year/week_of_year.dart';
-
 /*final diaryEntriesProvider = StateNotifierProvider<DiaryEntriesProvider, List<DiaryEntry>>(
   (ref) {
     final apiService = ref.watch(apiServiceProvider);
@@ -21,7 +6,7 @@ import 'package:week_of_year/week_of_year.dart';
   },
 );*/
 
-final diaryEntriesProvider = StateNotifierProvider<DiaryEntriesProvider, List<DiaryEntry>>(
+/*final diaryEntriesProvider = StateNotifierProvider<DiaryEntriesProvider, List<DiaryEntry>>(
   (ref) {
     final auth = ref.watch(authStateChangesProvider);
     if (auth.asData?.value != null) {
@@ -30,13 +15,13 @@ final diaryEntriesProvider = StateNotifierProvider<DiaryEntriesProvider, List<Di
     }
     return DiaryEntriesProvider(null);
   },
-);
+);*/
 
-final diaryEntriesByDate = FutureProvider.autoDispose.family<List<DiaryEntry>, DateTime>((ref, dateTime) async {
+/*final diaryEntriesByDate = FutureProvider.autoDispose.family<List<DiaryEntry>, DateTime>((ref, dateTime) async {
   final diaryEntries = ref.watch(diaryEntriesProvider.notifier);
   final result = diaryEntries.findByDate(dateTime);
   return Future.value(result);
-});
+});*/
 
 /*final getDiaryEntries = FutureProvider.autoDispose<List<DiaryEntry>>((ref) async {
   final diaryEntries = ref.watch(diaryEntriesProvider);
@@ -52,9 +37,10 @@ final filterDiaryEntriesByDate = FutureProvider.autoDispose.family<List<DiaryEnt
   return result;
 });*/
 
-class DiaryEntriesProvider extends StateNotifier<List<DiaryEntry>> {
+/*
+class _DiaryEntriesProvider extends StateNotifier<List<DiaryEntryAndDrink>> {
   // Constructors
-  DiaryEntriesProvider(this.user, [state]) : super(state ?? []);
+  _DiaryEntriesProvider(this.user, [state]) : super(state ?? []);
 
   User? user;
   bool _loaded = false;
@@ -65,23 +51,23 @@ class DiaryEntriesProvider extends StateNotifier<List<DiaryEntry>> {
   bool get loading => _loading;
 
   // Methods
-  DiaryEntry findById(String id) {
-    return state.firstWhere((diaryEntry) => diaryEntry.id == id);
+  DiaryEntryAndDrink findById(String id) {
+    return state.firstWhere((diaryEntryAndDrink) => diaryEntryAndDrink.diaryEntry.id == id);
   }
 
-  List<DiaryEntry> findByDate(DateTime dateTime) {
-    final diaryEntries = state.where((diaryEntry) => diaryEntry.dateTime!.day == dateTime.day).toList();
+  List<DiaryEntryAndDrink> findByDate(DateTime dateTime) {
+    final diaryEntries = state.where((diaryEntryAndDrink) => diaryEntryAndDrink.diaryEntry.dateTime!.day == dateTime.day).toList();
     debugPrint('diaryEntries: $diaryEntries');
     return diaryEntries;
   }
 
-  List<DiaryEntry> findByWeek(int weekOfYear) {
-    final diaryEntries = state.where((diaryEntry) => diaryEntry.dateTime!.weekOfYear == weekOfYear).toList();
+  List<DiaryEntryAndDrink> findByWeek(int weekOfYear) {
+    final diaryEntries = state.where((diaryEntryAndDrink) => diaryEntryAndDrink.diaryEntry.dateTime!.weekOfYear == weekOfYear).toList();
     debugPrint('diaryEntries: $diaryEntries');
     return diaryEntries;
   }
 
-  Future<List<DiaryEntry>> fetchDiaryEntries([List<Drink>? drinks]) async {
+  Future<List<DiaryEntryAndDrink>> fetchDiaryEntries([List<Drink>? drinks]) async {
     final userId = user!.uid;
     final authToken = await user!.getIdToken();
 
@@ -102,12 +88,13 @@ class DiaryEntriesProvider extends StateNotifier<List<DiaryEntry>> {
         return [];
       }
 
-      final List<DiaryEntry> loadedDiaryEntries = [];
+      final List<DiaryEntryAndDrink> loadedDiaryEntries = [];
       extractedData.forEach((diaryEntryId, diaryEntryData) {
         final drinkId = diaryEntryData['drinkId'];
         final volume = diaryEntryData['volume'];
         final drink = drinks!.firstWhere((drink) => drink.id == drinkId);
         final units = calculateUnits(drink.abv!, volume);
+
         loadedDiaryEntries.add(DiaryEntry(
           id: diaryEntryId,
           drink: drink,
@@ -244,3 +231,4 @@ class DiaryEntriesProvider extends StateNotifier<List<DiaryEntry>> {
     _sortDiaryEntries();
   }
 }
+*/

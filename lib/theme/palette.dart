@@ -20,6 +20,8 @@ class Palette {
   static const Color almostBlack = Color(0xFF040B13);
   static const Color lightGrey = Color(0xfffafafa);
 
+  static const Color labelGrey = Color(0xff9a9a9a);
+
   static const Color primaryColor = Color(0xffCA8D19);
 
   static const kRowOddColorDarkMode = Colors.black;

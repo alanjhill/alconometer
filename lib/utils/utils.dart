@@ -1,7 +1,8 @@
-import 'package:alconometer/constants.dart';
-import 'package:alconometer/providers/drink.dart';
+import 'package:alconometer/models/drink_type.dart';
+import 'package:alconometer/providers/app_state.dart';
 import 'package:alconometer/theme/palette.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 String getDrinkTypeText(DrinkType type) {
@@ -43,4 +44,21 @@ Color getRowColor(int index, bool darkMode) {
   } else {
     return (index % 2 == 0) ? Palette.kRowEvenColorLightMode : Palette.kRowOddColorLightMode;
   }
+}
+
+Color getTextColor(DiaryType diaryType, double weeklyAllowance, double units) {
+  final allowance = diaryType == DiaryType.week ? weeklyAllowance : (weeklyAllowance / 1);
+  if (units <= allowance * 0.9) {
+    return Colors.green;
+  } else if (units >= allowance && units <= allowance * 1.1) {
+    return Colors.amber;
+  } else {
+    return Colors.red;
+  }
+}
+
+DateTime getDateTimeNow() {
+  final now = DateTime.now();
+  final dateTime = DateTime(now.year, now.month, now.day);
+  return dateTime;
 }

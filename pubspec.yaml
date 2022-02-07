@@ -49,10 +49,15 @@ dependencies:
   #flutter_settings_screens: 0.3.2-null-safety
   searchfield: ^0.5.6
   search_choices: ^2.0.14
+  dropdown_search: ^2.0.1
   flutter_rounded_date_picker: ^2.0.2
-  flutter_slidable: ^0.6.0
+  date_time_picker: ^2.1.0
+  flutter_slidable: ^1.2.0
   flutter_riverpod: ^1.0.0
-
+  equatable: ^2.0.3
+  rxdart: ^0.27.3
+  another_flushbar: ^1.10.26
+  flutter_statusbarcolor_ns: ^0.4.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

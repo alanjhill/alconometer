@@ -1,7 +1,6 @@
 import 'package:alconometer/features/diary/edit_diary_entry.dart';
 import 'package:alconometer/features/drinks/edit_drink.dart';
-import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/theme/palette.dart';
+import 'package:alconometer/models/drink_type.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -32,17 +31,17 @@ class _HomeMenuState extends State<HomeMenu> {
             children: [
               const Text(
                 'ADD DRINK TO DIARY',
-                style: TextStyle(fontSize: 18.0),
+                style: TextStyle(fontSize: 12.0),
               ),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 8.0),
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
                 ElevatedButton(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const <Widget>[
-                      Icon(FontAwesomeIcons.beer),
-                      SizedBox(height: 8.0),
-                      Text('Beer'),
+                      Icon(FontAwesomeIcons.beer, size: 16.0),
+                      SizedBox(height: 4.0),
+                      Text('Beer', style: TextStyle(fontSize: 10.0)),
                     ],
                   ),
                   onPressed: () {
@@ -54,11 +53,9 @@ class _HomeMenuState extends State<HomeMenu> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const <Widget>[
-                      Icon(FontAwesomeIcons.wineGlassAlt),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Wine',
-                      ),
+                      Icon(FontAwesomeIcons.wineGlassAlt, size: 16.0),
+                      SizedBox(height: 4.0),
+                      Text('Wine', style: TextStyle(fontSize: 10.0)),
                     ],
                   ),
                   onPressed: () {
@@ -70,11 +67,9 @@ class _HomeMenuState extends State<HomeMenu> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const <Widget>[
-                      Icon(FontAwesomeIcons.glassWhiskey),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Spirit',
-                      ),
+                      Icon(FontAwesomeIcons.glassWhiskey, size: 16.0),
+                      SizedBox(height: 4.0),
+                      Text('Spirit', style: TextStyle(fontSize: 10.0)),
                     ],
                   ),
                   onPressed: () {
@@ -83,20 +78,20 @@ class _HomeMenuState extends State<HomeMenu> {
                   },
                 ),
               ]),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 8.0),
               const Text(
                 'CREATE NEW DRINK',
-                style: TextStyle(fontSize: 18.0),
+                style: TextStyle(fontSize: 12.0),
               ),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 8.0),
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: <Widget>[
                 ElevatedButton(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const <Widget>[
-                      Icon(FontAwesomeIcons.beer),
-                      SizedBox(height: 8.0),
-                      Text('Beer'),
+                      Icon(FontAwesomeIcons.beer, size: 16.0),
+                      SizedBox(height: 4.0),
+                      Text('Beer', style: TextStyle(fontSize: 10.0)),
                     ],
                   ),
                   onPressed: () {
@@ -108,13 +103,9 @@ class _HomeMenuState extends State<HomeMenu> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const <Widget>[
-                      Icon(
-                        FontAwesomeIcons.wineGlassAlt,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Wine',
-                      ),
+                      Icon(FontAwesomeIcons.wineGlassAlt, size: 16.0),
+                      SizedBox(height: 4.0),
+                      Text('Wine', style: TextStyle(fontSize: 10.0)),
                     ],
                   ),
                   onPressed: () {
@@ -126,13 +117,9 @@ class _HomeMenuState extends State<HomeMenu> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: const <Widget>[
-                      Icon(
-                        FontAwesomeIcons.glassWhiskey,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Spirit',
-                      ),
+                      Icon(FontAwesomeIcons.glassWhiskey, size: 16.0),
+                      SizedBox(height: 4.0),
+                      Text('Spirit', style: TextStyle(fontSize: 10.0)),
                     ],
                   ),
                   onPressed: () {
@@ -155,7 +142,7 @@ class _HomeMenuState extends State<HomeMenu> {
                   Navigator.pop(context);
                 },
               ),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 8.0),
             ],
           ),
         ),

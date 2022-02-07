@@ -5,7 +5,6 @@ import 'package:alconometer/features/home/home_menu.dart';
 import 'package:alconometer/features/settings/settings_screen.dart';
 import 'package:alconometer/providers/app_state.dart';
 import 'package:alconometer/widgets/modal_bottom_sheet.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,6 +28,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     SettingsScreen(),
   ];
 
+  void _callback() {
+    debugPrint('Alan');
+  }
+
   @override
   void initState() {
     debugPrint('>>> HomeScreen >>>');
@@ -44,8 +47,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    bottomSheetAnimationController.dispose();
     super.dispose();
+    bottomSheetAnimationController.dispose();
   }
 
   @override

@@ -1,4 +1,4 @@
-import 'package:alconometer/providers/drink.dart';
+import 'package:alconometer/models/drink_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final drinksStateProvider = StateNotifierProvider<DrinksStateNotifier, DrinksState>((ref) {

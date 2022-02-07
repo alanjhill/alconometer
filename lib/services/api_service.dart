@@ -29,5 +29,6 @@ class ApiService {
   ApiService(this._userId, this._idToken);
 
   String get userId => _userId;
+
   String get idToken => _idToken;
 }

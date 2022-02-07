@@ -10,9 +10,13 @@ class DataScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: const Text('Drinks'),
+        title: const Text('Data'),
       ),
-      body: const Text('DATA'),
+      body: Center(
+        child: Column(
+          children: const [],
+        ),
+      ),
     );
   }
 }

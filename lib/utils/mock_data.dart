@@ -1,6 +1,4 @@
-import 'package:alconometer/providers/diary_entry.dart';
-import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/utils/date_utils.dart';
+/*
 
 final mockDrinks = [
   const Drink(type: DrinkType.beer, id: '01', name: 'IRONWORKERS IPA', abv: 4.2),
@@ -29,3 +27,4 @@ final mockDiaryEntries = [
   DiaryEntry(id: '11', dateTime: DateUtils.daysAgo(7), drink: mockDrinks.firstWhere((drink) => drink.id == '01'), volume: 473, units: 1.892),
   DiaryEntry(id: '12', dateTime: DateUtils.daysAgo(14), drink: mockDrinks.firstWhere((drink) => drink.id == '09'), volume: 375, units: 3.892),
 ];
+*/

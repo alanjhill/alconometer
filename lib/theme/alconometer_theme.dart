@@ -84,10 +84,12 @@ class AlconometerTheme {
         elevation: 2.0,
         foregroundColor: Colors.white,
         backgroundColor: Palette.primaryColor,
-        shadowColor: Palette.primaryColor,
+        //System Overlay
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Palette.primaryColor,
           statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: Palette.primaryColor,
+          systemStatusBarContrastEnforced: true,
+          statusBarBrightness: Brightness.light,
         ),
       ),
       tabBarTheme: TabBarTheme(
@@ -110,7 +112,7 @@ class AlconometerTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 2.0,
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0), //const EdgeInsets.all(8.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),
@@ -126,6 +128,8 @@ class AlconometerTheme {
         ),
       ),
       inputDecorationTheme: const InputDecorationTheme(
+        labelStyle: TextStyle(color: Palette.labelGrey),
+        floatingLabelStyle: TextStyle(color: Palette.labelGrey),
         enabledBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.grey),
         ),
@@ -135,17 +139,12 @@ class AlconometerTheme {
         border: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.blueGrey),
         ),
+        errorBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.red, width: 0.75),
+        ),
       ),
-      colorScheme: ColorScheme.fromSwatch().copyWith(
-        brightness: Brightness.light,
-        primary: Palette.primaryColor,
-      ),
-      timePickerTheme: TimePickerThemeData(
-        entryModeIconColor: Palette.primaryColor,
-        dialBackgroundColor: Colors.grey.shade200, //Palette.primaryMaterialColor.shade100,
-        dialTextColor: Palette.primaryColor,
-        hourMinuteTextStyle: const TextStyle(color: Palette.primaryColor, fontSize: 48),
-        hourMinuteColor: Colors.grey.shade200,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: Palette.primaryColor,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: MaterialStateProperty.all(
@@ -154,6 +153,36 @@ class AlconometerTheme {
         trackColor: MaterialStateProperty.all(
           Palette.primaryMaterialColor.shade500,
         ),
+      ),
+      colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Palette.primaryColor.withAlpha(100)),
+    );
+  }
+
+  static ThemeData datePickerLight() {
+    return ThemeData(
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        brightness: Brightness.light,
+        primary: Palette.primaryColor,
+        secondary: Palette.almostBlack,
+        surface: Palette.primaryColor,
+      ),
+    );
+  }
+
+  static ThemeData timePickerLight() {
+    return ThemeData(
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        brightness: Brightness.light,
+        primary: Palette.primaryColor,
+        onPrimary: Colors.white,
+        surface: Colors.white,
+        onSurface: Palette.almostBlack,
+        onBackground: Palette.labelGrey, //Palette.primaryColor.withAlpha(10),
+      ),
+      timePickerTheme: const TimePickerThemeData(
+        entryModeIconColor: Palette.primaryColor,
+        //dialTextColor: Palette.primaryColor,
+        //dialHandColor: Colors.blue,
       ),
     );
   }
@@ -164,6 +193,7 @@ class AlconometerTheme {
       textTheme: darkTextTheme,
       canvasColor: Colors.black,
       primaryColor: Palette.primaryColor,
+      backgroundColor: Palette.primaryColor,
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Palette.almostBlack,
       ),
@@ -171,14 +201,17 @@ class AlconometerTheme {
         elevation: 2.0,
         foregroundColor: Colors.white,
         backgroundColor: Palette.almostBlack,
+        //System Overlay
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Palette.almostBlack,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.dark,
+          systemNavigationBarColor: Palette.almostBlack,
+          systemStatusBarContrastEnforced: false,
+          statusBarBrightness: Brightness.dark,
         ),
       ),
       tabBarTheme: TabBarTheme(
         labelColor: Palette.primaryColor,
-        unselectedLabelColor: Palette.primaryColor.withAlpha(80),
+        unselectedLabelColor: Palette.primaryColor.withAlpha(120),
         labelStyle: const TextStyle(fontWeight: FontWeight.bold),
         indicator: const UnderlineTabIndicator(borderSide: BorderSide(color: Palette.primaryColor, width: 2.0)),
       ),
@@ -188,7 +221,7 @@ class AlconometerTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Palette.almostBlack,
         selectedItemColor: Palette.primaryColor,
-        unselectedItemColor: Palette.primaryColor.withAlpha(80),
+        unselectedItemColor: Palette.primaryColor.withAlpha(120),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: Palette.primaryColor,
@@ -197,7 +230,7 @@ class AlconometerTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 2.0,
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0), //const EdgeInsets.all(8.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),
@@ -213,14 +246,20 @@ class AlconometerTheme {
         ),
       ),
       inputDecorationTheme: const InputDecorationTheme(
+        labelStyle: TextStyle(color: Colors.white),
+        floatingLabelStyle: TextStyle(color: Colors.white),
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+        alignLabelWithHint: true,
+        hintStyle: TextStyle(color: Colors.red),
         enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        focusedBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Palette.primaryColor),
         ),
       ),
-      timePickerTheme: TimePickerThemeData(
-        backgroundColor: Palette.almostBlack,
-        entryModeIconColor: Palette.primaryColor,
-        dialBackgroundColor: Palette.primaryMaterialColor.shade500,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: Palette.primaryColor,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: MaterialStateProperty.all(
@@ -231,6 +270,37 @@ class AlconometerTheme {
         ),
       ),
       //colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.blueGrey.shade600, brightness: Brightness.dark),
+    );
+  }
+
+  static ThemeData datePickerDark() {
+    return ThemeData(
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        brightness: Brightness.dark,
+        primary: Palette.primaryColor,
+        surface: Palette.primaryColor,
+        onSurface: Colors.white,
+      ),
+      dialogBackgroundColor: Palette.almostBlack,
+    );
+  }
+
+  static ThemeData timePickerDark() {
+    return ThemeData(
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        brightness: Brightness.dark,
+        primary: Palette.primaryColor,
+        surface: Palette.primaryColor,
+        onSurface: Colors.white,
+      ),
+      timePickerTheme: TimePickerThemeData(
+        entryModeIconColor: Palette.primaryColor,
+        backgroundColor: Palette.almostBlack,
+        dialBackgroundColor: Palette.primaryColor.withOpacity(0.1),
+        hourMinuteTextStyle: const TextStyle(color: Palette.primaryColor, fontSize: 48),
+        hourMinuteColor: Palette.primaryColor.withOpacity(0.1),
+        dialHandColor: Palette.primaryColor,
+      ),
     );
   }
 }

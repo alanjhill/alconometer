@@ -1,26 +1,28 @@
-import 'package:alconometer/providers/diary_entries.dart';
-import 'package:alconometer/providers/diary_entry.dart';
-import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/providers/drinks.dart';
+import 'package:alconometer/features/drinks/drinks_screen.dart';
+import 'package:alconometer/models/diary_entry.dart';
+import 'package:alconometer/models/diary_entry_and_drink.dart';
+import 'package:alconometer/models/drink.dart';
+import 'package:alconometer/models/drink_type.dart';
+import 'package:alconometer/providers/app_settings.dart';
+import 'package:alconometer/providers/app_state.dart';
 import 'package:alconometer/providers/top_level_providers.dart';
-import 'package:alconometer/theme/palette.dart';
+import 'package:alconometer/theme/alconometer_theme.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
-import 'package:search_choices/search_choices.dart';
 
 class EditDiaryEntryArguments {
-  EditDiaryEntryArguments({required this.drinkType, this.drink, this.id});
+  EditDiaryEntryArguments({required this.drinkType, this.diaryEntryAndDrink, this.drink});
   final DrinkType drinkType;
+  final DiaryEntryAndDrink? diaryEntryAndDrink;
   final Drink? drink;
-  final String? id;
 }
 
 class EditDiaryEntry extends ConsumerStatefulWidget {
   static const routeName = '/edit-diary-entry';
+
   const EditDiaryEntry({Key? key, required this.args}) : super(key: key);
   final EditDiaryEntryArguments args;
 
@@ -32,40 +34,82 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
   //final _drinkFocusNode = FocusNode();
   //final _volumeFocusNode = FocusNode();
   //final _dateTimeNode = FocusNode();
-  final _drinkTextController = TextEditingController();
-  final _drinkSuggestionsBoxController = SuggestionsBoxController();
+  final _formKey = GlobalKey<FormState>();
+  //final _drinkTextController = TextEditingController();
+  //final _drinkSuggestionsBoxController = SuggestionsBoxController();
+  //final _dateTimeTextController = TextEditingController();
   final _dateTextController = TextEditingController();
   final _timeTextController = TextEditingController();
 
-  var _editedDiaryEntry = DiaryEntry(id: null, dateTime: DateTime.now(), drink: const Drink.empty(), volume: 0.0, units: 0.0);
-  final _formKey = GlobalKey<FormState>();
+  //var _editedDrink = Drink(id: nu);
 
-  String? _drinkId;
+  DiaryEntry _editedDiaryEntry = DiaryEntry(id: null, dateTime: null, drinkId: null, volume: 0.0);
+  Drink? _selectedDrink;
+  bool _isInit = true;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.args.id != null) {
-      final diaryEntries = ref.read(diaryEntriesProvider.notifier);
-      _editedDiaryEntry = diaryEntries.findById(widget.args.id!);
-      _drinkTextController.text = _editedDiaryEntry.drink!.name;
-    }
-    _dateTextController.text = DateFormat('yyyy-MM-dd').format(_editedDiaryEntry.dateTime!);
-    _timeTextController.text = DateFormat('hh:mm').format(_editedDiaryEntry.dateTime!);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_isInit) {
+      if (widget.args.diaryEntryAndDrink == null) {
+        // displayedDate is UTC
+        final displayedDate = ref.read(appStateProvider).displayedDate;
+        final now = DateTime.now();
+        final dateTime = DateTime(displayedDate!.year, displayedDate.month, displayedDate.day, now.hour, now.minute, now.second, now.millisecond);
+        setState(() {
+          _editedDiaryEntry = DiaryEntry(
+            id: _editedDiaryEntry.id,
+            drinkId: widget.args.drink != null ? widget.args.drink!.id : _editedDiaryEntry.drinkId,
+            dateTime: dateTime.toUtc(),
+            volume: _editedDiaryEntry.volume,
+          );
+
+          if (widget.args.drink != null) {
+            var drink = widget.args.drink!;
+            _selectedDrink = Drink(
+              id: drink.id,
+              name: drink.name,
+              type: drink.type,
+              abv: drink.abv,
+            );
+          }
+        });
+      } else {
+        setState(() {
+          var diaryEntry = widget.args.diaryEntryAndDrink!.diaryEntry;
+          _editedDiaryEntry = DiaryEntry(
+            id: diaryEntry.id,
+            drinkId: diaryEntry.drinkId,
+            dateTime: diaryEntry.dateTime!.toLocal(),
+            volume: diaryEntry.volume,
+          );
+          var drink = widget.args.diaryEntryAndDrink!.drink;
+          _selectedDrink = Drink(
+            id: drink.id,
+            name: drink.name,
+            type: drink.type,
+            abv: drink.abv,
+          );
+          debugPrint('_editedDiaryEntry: $_editedDiaryEntry');
+        });
+      }
+      final appSettings = ref.read(appSettingsProvider);
+      _dateTextController.text = DateFormat(appSettings.dateFormat).format(_editedDiaryEntry.dateTime!.toLocal());
+      _timeTextController.text = DateFormat(appSettings.timeFormat).format(_editedDiaryEntry.dateTime!.toLocal());
+      _isInit = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final drinks = ref.read(drinksProvider);
-    final drinksList = drinks;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.args.drink != null ? widget.args.drink!.name : 'Add Diary Entry')),
+      appBar: AppBar(title: Text(_selectedDrink != null ? _selectedDrink!.name : 'Add Diary Entry')),
       body: SingleChildScrollView(
         physics: const ScrollPhysics(),
         child: Container(
@@ -82,11 +126,12 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
                 children: [
                   // Drinks
                   const SizedBox(height: 16.0),
-                  buildDrinkSelect(context, drinksList),
-                  buildVolumeField(),
-                  buildDateField(context),
-                  buildTimeField(context),
-                  buildButtons(context),
+                  _buildDrinkSelect(context),
+                  _buildVolumeField(),
+                  //Text(_editedDiaryEntry.dateTime!.toLocal().toString()),
+                  _buildDateField(context),
+                  _buildTimeField(context),
+                  _buildButtons(context),
                 ],
               ),
             ),
@@ -96,70 +141,47 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
     );
   }
 
-  Widget buildDrinkSelect(BuildContext context, List<Drink> drinks) {
-    return SearchChoices.single(
-      items: getDropdownItems(drinks),
-      value: _editedDiaryEntry.drink,
-      searchFn: searchFunction,
-      onChanged: (drink) {
-        if (drink != null) {
-          _editedDiaryEntry = _editedDiaryEntry.copyWith(drink: drink);
-        } else {
-          _editedDiaryEntry = _editedDiaryEntry.copyWith(drink: const Drink.empty());
-        }
-      },
-      isExpanded: true,
-      style: Theme.of(context).textTheme.headline3,
-      iconEnabledColor: Theme.of(context).primaryColor,
-      underline: Container(
-        height: 1.0,
-        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).primaryColor, width: 1.0))),
-      ),
-      searchInputDecoration: InputDecoration(
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey),
+  Widget _buildDrinkSelect(BuildContext context) {
+    return DropdownSearch<Drink>(
+        popupItemBuilder: _drinkPopupItemBuilder,
+        selectedItem: _selectedDrink,
+        dropdownSearchDecoration: const InputDecoration(
+          labelText: 'Drink',
+          isDense: false,
+          isCollapsed: true,
         ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Theme.of(context).primaryColor),
-        ),
-        border: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[900]!),
-        ),
-      ),
-    );
-  }
-
-  List<int> searchFunction(String keyword, items) {
-    List<int> ret = [];
-    if (items != null && keyword.isNotEmpty) {
-      keyword.split(" ").forEach((k) {
-        int i = 0;
-        items.forEach((item) {
-          if (!ret.contains(i) && k.isNotEmpty && (item.value.name.toString().toLowerCase().contains(k.toLowerCase()))) {
-            ret.add(i);
+        items: _getDrinks(),
+        compareFn: (item, selectedItem) => item?.id == selectedItem?.id,
+        itemAsString: (Drink? d) => d!.name,
+        showSearchBox: true,
+        showClearButton: true,
+        clearButton: const Icon(Icons.close),
+        validator: (value) {
+          debugPrint('value: $value');
+          if (value == null) {
+            return 'Please select a drink';
           }
-          i++;
+          return null;
+        },
+        onChanged: (drink) {
+          if (drink != null) {
+            setState(() {
+              _editedDiaryEntry = _editedDiaryEntry.copyWith(drinkId: drink.id);
+              _selectedDrink = drink.copyWith();
+            });
+          } else {
+            setState(() {
+              _editedDiaryEntry = _editedDiaryEntry.copyWith(drinkId: null);
+              _selectedDrink = null;
+            });
+          }
         });
-      });
-    }
-    if (keyword.isEmpty) {
-      ret = Iterable<int>.generate(items.length).toList();
-    }
-    return (ret);
   }
 
-  List<DropdownMenuItem<Drink>> getDropdownItems(List<Drink> drinks) {
-    List<DropdownMenuItem<Drink>> items = [];
-    drinks.forEach((drink) {
-      items.add(DropdownMenuItem<Drink>(child: Text(drink.name), value: drink));
-    });
-    return items;
-  }
-
-  TextFormField buildVolumeField() {
+  TextFormField _buildVolumeField() {
     return TextFormField(
       initialValue: _editedDiaryEntry.volume != 0.0 ? _editedDiaryEntry.volume.toString() : '',
-      decoration: const InputDecoration(labelText: 'Volume', labelStyle: TextStyle(color: Colors.grey)),
+      decoration: const InputDecoration(labelText: 'Volume'),
       keyboardType: TextInputType.number,
       validator: (value) {
         if (value!.isEmpty) {
@@ -173,7 +195,8 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
     );
   }
 
-  Widget buildDateField(BuildContext context) {
+  Widget _buildDateField(BuildContext context) {
+    final appSettings = ref.watch(appSettingsProvider);
     return TextFormField(
       controller: _dateTextController,
       decoration: const InputDecoration(labelText: 'Date', labelStyle: TextStyle(color: Colors.grey)),
@@ -181,86 +204,87 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
       onTap: () async {
         final currentDate = DateTime.now();
         final selectedDate = await showDatePicker(
-          context: context,
-          initialDate: _editedDiaryEntry.dateTime!,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(currentDate.year + 5),
-          builder: (BuildContext context, Widget? child) {
-            return Theme(
-              data: ThemeData.light().copyWith(
-                colorScheme: ColorScheme.fromSwatch(
-                  primarySwatch: Palette.primaryMaterialColor,
-                  //brightness: Brightness.light,
-                ),
-              ),
-              child: child!,
-            );
-          },
-          locale: const Locale('en', 'GB'),
-        );
+            context: context,
+            initialDate: _editedDiaryEntry.dateTime!,
+            firstDate: DateTime.utc(currentDate.year - 5),
+            lastDate: DateTime.utc(currentDate.year + 1),
+            locale: const Locale('en', 'GB'),
+            builder: (BuildContext context, Widget? child) => Theme(
+                  data: appSettings.darkMode! ? AlconometerTheme.datePickerDark() : AlconometerTheme.datePickerLight(),
+                  child: child!,
+                ));
         if (selectedDate != null) {
-          _editedDiaryEntry = _editedDiaryEntry.copyWith(dateTime: selectedDate);
-          _dateTextController.text = DateFormat('yyyy-MM-dd').format(_editedDiaryEntry.dateTime!);
-        }
-      },
-    );
-  }
-
-  Widget buildTimeField(BuildContext context) {
-    return TextFormField(
-      controller: _timeTextController,
-      decoration: const InputDecoration(labelText: 'Time', labelStyle: TextStyle(color: Colors.grey)),
-      onTap: () async {
-        final selectedTime = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.fromDateTime(_editedDiaryEntry.dateTime!),
-          builder: (BuildContext context, Widget? child) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-              child: child!,
-            );
-          },
-        );
-        if (selectedTime != null) {
-          var selectedDate = _editedDiaryEntry.dateTime;
-          var newDate = DateTime(selectedDate!.year, selectedDate.month, selectedDate.day, selectedTime.hour, selectedTime.minute);
-          _editedDiaryEntry = _editedDiaryEntry.copyWith(dateTime: newDate);
-          _timeTextController.text = DateFormat('HH:mm').format(_editedDiaryEntry.dateTime!);
+          final appSettings = ref.watch(appSettingsProvider);
+          setState(() {
+            final localDate = _editedDiaryEntry.dateTime!.toLocal();
+            final newDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, localDate.hour, localDate.minute);
+            _editedDiaryEntry = _editedDiaryEntry.copyWith(dateTime: newDate);
+            _dateTextController.text = DateFormat(appSettings.dateFormat).format(_editedDiaryEntry.dateTime!);
+          });
         }
       },
     );
   }
 
   Widget _buildTimeField(BuildContext context) {
+    final appSettings = ref.watch(appSettingsProvider);
     return TextFormField(
       controller: _timeTextController,
       decoration: const InputDecoration(labelText: 'Time', labelStyle: TextStyle(color: Colors.grey)),
       onTap: () async {
-        final selectedTime = await showRoundedTimePicker(
+        final selectedTime = await showTimePicker(
           context: context,
-          locale: const Locale('en', 'GB'),
-          initialTime: TimeOfDay.fromDateTime(_editedDiaryEntry.dateTime!),
-          theme: ThemeData.light().copyWith(
-            primaryColor: Palette.primaryColor,
-            primaryTextTheme: ThemeData.light().textTheme,
-            textButtonTheme: ThemeData.light().textButtonTheme,
-            colorScheme: ColorScheme.fromSwatch(
-              primarySwatch: Palette.primaryMaterialColor,
-              //brightness: Brightness.light,
-            ),
-          ),
+          initialTime: TimeOfDay.fromDateTime(_editedDiaryEntry.dateTime!.toLocal()),
+          builder: (BuildContext context, Widget? child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: appSettings.time24Hour),
+              child: Theme(data: appSettings.darkMode! ? AlconometerTheme.timePickerDark() : AlconometerTheme.timePickerLight(), child: child!),
+            );
+          },
         );
         if (selectedTime != null) {
-          var selectedDate = _editedDiaryEntry.dateTime;
-          var newDate = DateTime(selectedDate!.year, selectedDate.month, selectedDate.day, selectedTime.hour, selectedTime.minute);
-          _editedDiaryEntry = _editedDiaryEntry.copyWith(dateTime: newDate);
-          _timeTextController.text = DateFormat('HH:mm').format(_editedDiaryEntry.dateTime!);
+          final appSettings = ref.watch(appSettingsProvider);
+          var selectedDate = _editedDiaryEntry.dateTime!.toLocal();
+          var newDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, selectedTime.hour, selectedTime.minute);
+          setState(() {
+            _editedDiaryEntry = _editedDiaryEntry.copyWith(dateTime: newDate);
+            _timeTextController.text = DateFormat(appSettings.timeFormat).format(_editedDiaryEntry.dateTime!);
+          });
         }
       },
     );
   }
 
-  Widget buildButtons(BuildContext context) {
+  Widget _drinkPopupItemBuilder(BuildContext context, Drink? item, bool isSelected) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: !isSelected
+          ? null
+          : BoxDecoration(
+              border: Border.all(color: Theme.of(context).primaryColor),
+              borderRadius: BorderRadius.circular(5),
+              color: Colors.white,
+            ),
+      child: ListTile(
+        selected: isSelected,
+        title: Text(item?.name ?? ''),
+        subtitle: Text(item?.abv.toString() ?? ''),
+      ),
+    );
+  }
+
+  List<Drink> _getDrinks() {
+    final drinksAsyncValue = ref.watch(drinksByTypeStreamProvider(widget.args.drinkType));
+    List<Drink> items = [];
+    drinksAsyncValue.whenData((drinks) {
+      for (var drink in drinks) {
+        items.add(drink);
+      }
+    });
+    return items;
+  }
+
+  Widget _buildButtons(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
@@ -271,63 +295,12 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
             }),
         const SizedBox(width: 16.0),
         ElevatedButton(
-            child: const Text('Save'),
+            child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white)) : const Text('Save'),
             onPressed: () {
               _saveForm(ref);
             }),
       ],
     );
-  }
-
-  void _onItemSelected(Drink drink) {
-    debugPrint('selected: ${drink.name}');
-  }
-
-  List<Drink> _getDrinksFilteredByName(List<Drink> drinks, String filter) {
-    List<Drink> filteredDrinks = [];
-    for (var drink in drinks) {
-      if (drink.filterByName(filter)) {
-        filteredDrinks.add(drink);
-      }
-    }
-    debugPrint('>>> filteredDrinks: $filteredDrinks');
-    return filteredDrinks;
-  }
-
-  Future<void> _presentDatePicker(BuildContext context) async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _editedDiaryEntry.dateTime ?? DateTime.now(),
-      firstDate: DateTime(2021),
-      lastDate: DateTime(2022),
-    );
-
-    if (pickedDate == null) {
-      return;
-    }
-
-    setState(() {
-      _editedDiaryEntry = _editedDiaryEntry.copyWith(dateTime: pickedDate);
-      debugPrint(_editedDiaryEntry.toString());
-      //_dateTextController.text = pickedDate.toString();
-    });
-  }
-
-  RenderBox? _findBorderBox(RenderBox box) {
-    RenderBox? borderBox;
-
-    box.visitChildren((child) {
-      if (child is RenderCustomPaint) {
-        borderBox = child;
-      }
-
-      final box = _findBorderBox(child as RenderBox);
-      if (box != null) {
-        borderBox = box;
-      }
-    });
-
-    return borderBox;
   }
 
   Future<void> _saveForm(WidgetRef ref) async {
@@ -342,11 +315,19 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
       _isLoading = true;
     });
 
-    final diaryEntriesNotifier = ref.read(diaryEntriesProvider.notifier);
+    final database = ref.read(databaseProvider);
     if (_editedDiaryEntry.id == null) {
-      await diaryEntriesNotifier.addDiaryEntry(_editedDiaryEntry);
+      await database.addDiaryEntry(_editedDiaryEntry);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Added new diary entry'),
+        duration: Duration(milliseconds: 800),
+      ));
     } else {
-      await diaryEntriesNotifier.updateDiaryEntry(_editedDiaryEntry.id!, _editedDiaryEntry);
+      await database.updateDiaryEntry(_editedDiaryEntry.id!, _editedDiaryEntry);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Updated diary entry'),
+        duration: Duration(milliseconds: 800),
+      ));
     }
 
     setState(() {
@@ -358,7 +339,7 @@ class _EditDiaryEntryState extends ConsumerState<EditDiaryEntry> {
   @override
   void dispose() {
     super.dispose();
-    _drinkTextController.dispose();
+    //_drinkTextController.dispose();
     //_drinkSuggestionsBoxController.dispose();
   }
 }

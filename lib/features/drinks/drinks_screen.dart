@@ -1,26 +1,25 @@
-import 'package:alconometer/features/drinks/drinks_tab_view.dart';
-import 'package:alconometer/providers/top_level_providers.dart';
-import 'package:alconometer/widgets/custom_app_bar.dart';
 import 'package:alconometer/features/drinks/drinks_state.dart';
+import 'package:alconometer/features/drinks/drinks_tab_view.dart';
+import 'package:alconometer/models/drink.dart';
+import 'package:alconometer/models/drink_type.dart';
 import 'package:alconometer/providers/app_state.dart';
-import 'package:alconometer/providers/drink.dart';
-import 'package:alconometer/providers/drinks.dart';
+import 'package:alconometer/providers/top_level_providers.dart';
 import 'package:alconometer/widgets/app_drawer.dart';
+import 'package:alconometer/widgets/custom_app_bar.dart';
 import 'package:alconometer/widgets/custom_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// >>> Providers
-final drinksStreamProvider = StreamProvider.autoDispose<List<Drink>>(
-  (ref) {
+final drinksByTypeStreamProvider = StreamProvider.autoDispose.family<List<Drink>, DrinkType>(
+  (ref, drinkType) {
     final database = ref.watch(databaseProvider);
-    final dp = DrinksProvider(database);
-    return dp.myDrinksStream;
+    return database.drinksByTypeStream(drinkType);
   },
 );
 
-class DrinksScreen extends StatefulWidget {
+class DrinksScreen extends ConsumerStatefulWidget {
   static const routeName = '/drinks';
 
   const DrinksScreen({Key? key}) : super(key: key);
@@ -29,7 +28,7 @@ class DrinksScreen extends StatefulWidget {
   _DrinksScreenState createState() => _DrinksScreenState();
 }
 
-class _DrinksScreenState extends State<DrinksScreen> with SingleTickerProviderStateMixin {
+class _DrinksScreenState extends ConsumerState<DrinksScreen> with SingleTickerProviderStateMixin {
   final List<Tab> _tabs = <Tab>[
     const Tab(
       icon: Icon(FontAwesomeIcons.beer),
@@ -46,8 +45,7 @@ class _DrinksScreenState extends State<DrinksScreen> with SingleTickerProviderSt
   ];
   late TabController _tabController;
   static final _drinksScreenKey = GlobalKey<_DrinksScreenState>();
-  var _isInit = true;
-  var _isLoading = false;
+  late List<Drink> drinks;
 
   @override
   void initState() {
@@ -55,22 +53,6 @@ class _DrinksScreenState extends State<DrinksScreen> with SingleTickerProviderSt
     _tabController = TabController(vsync: this, length: _tabs.length, initialIndex: 0);
     _tabController.addListener(_setTab);
   }
-
-/*  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isInit) {
-      setState(() {
-        _isLoading = true;
-      });
-      Provider.of<Drinks>(context).fetchDrinks().then((_) {
-        setState(() {
-          _isLoading = false;
-        });
-      });
-    }
-    _isInit = false;
-  }*/
 
   @override
   void dispose() {
@@ -84,14 +66,13 @@ class _DrinksScreenState extends State<DrinksScreen> with SingleTickerProviderSt
     return Consumer(builder: (context, WidgetRef ref, __) {
       final drinksState = ref.watch(drinksStateProvider);
       final selectedTab = drinksState.selectedTab;
-      _tabController.animateTo(selectedTab!);
+      //_tabController.animateTo(selectedTab!);
       return Scaffold(
         appBar: CustomAppBar(
           title: const Text('Drinks'),
           bottom: CustomTabBar(
             color: Theme.of(context).canvasColor,
             tabBar: TabBar(
-              overlayColor: MaterialStateProperty.all(Colors.green),
               indicatorColor: Colors.blueGrey,
               controller: _tabController,
               padding: const EdgeInsets.all(0.0),
@@ -103,14 +84,13 @@ class _DrinksScreenState extends State<DrinksScreen> with SingleTickerProviderSt
           ),
         ),
         drawer: const AppDrawer(),
-        body: _isLoading ? const Center(child: CircularProgressIndicator()) : _DrinksTabs(_tabController),
+        body: _DrinksTabs(_tabController),
       );
     });
   }
 
   void _setTab() {
     _tabController.animateTo(_tabController.index);
-    //    _drinksViewTypeHandler(ref, _tabController.index);
   }
 
   void _drinksViewTypeHandler(WidgetRef ref, int index) {
@@ -126,21 +106,20 @@ class _DrinksScreenState extends State<DrinksScreen> with SingleTickerProviderSt
 
 class _DrinksTabs extends ConsumerWidget {
   final TabController _tabController;
-
   const _DrinksTabs(this._tabController);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final drinks = ref.read(drinksProvider);
-
-    final drinksAsyncValue = ref.watch(drinksStreamProvider);
-
+    final drinksBeerAsyncValue = ref.watch(drinksByTypeStreamProvider(DrinkType.beer));
+    final drinksWineAsyncValue = ref.watch(drinksByTypeStreamProvider(DrinkType.wine));
+    final drinksSpiritAsyncValue = ref.watch(drinksByTypeStreamProvider(DrinkType.spirit));
     return TabBarView(
       controller: _tabController,
+      physics: const NeverScrollableScrollPhysics(),
       children: <Widget>[
-        DrinksTabViewAsync(drinkType: DrinkType.beer, drinks: drinksAsyncValue),
-        DrinksTabView(drinkType: DrinkType.wine, drinks: drinks),
-        DrinksTabView(drinkType: DrinkType.spirit, drinks: drinks),
+        DrinksTabView(drinkType: DrinkType.beer, drinks: drinksBeerAsyncValue),
+        DrinksTabView(drinkType: DrinkType.wine, drinks: drinksWineAsyncValue),
+        DrinksTabView(drinkType: DrinkType.spirit, drinks: drinksSpiritAsyncValue),
       ],
     );
   }

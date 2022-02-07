@@ -1,37 +1,59 @@
-import 'package:alconometer/features/diary/diary_summary.dart';
 import 'package:alconometer/features/diary/diary_item.dart';
-import 'package:alconometer/providers/diary_entry.dart';
+import 'package:alconometer/features/diary/diary_summary.dart';
+import 'package:alconometer/models/diary_entry_and_drink.dart';
+import 'package:alconometer/widgets/empty_content.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
-class DiaryList extends StatelessWidget {
-  const DiaryList({Key? key, required this.diaryEntries}) : super(key: key);
-  final List<DiaryEntry> diaryEntries;
+class DiaryEntryAndDrinkList extends ConsumerWidget {
+  const DiaryEntryAndDrinkList({Key? key, required this.diaryEntryAndDrinkData}) : super(key: key);
+  final AsyncValue<List<DiaryEntryAndDrink>> diaryEntryAndDrinkData;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        DiarySummary(diaryEntries: diaryEntries),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
-              Column(children: <Widget>[
-                ListView.builder(
-                  padding: const EdgeInsets.all(0),
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: diaryEntries.length,
-                  itemBuilder: (content, index) => DiaryItem(
-                    diaryEntry: diaryEntries[index],
-                    index: index,
-                  ),
-                )
-              ]),
-            ]),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return diaryEntryAndDrinkData.when(
+      data: (items) => items.isNotEmpty ? _buildList(ref, items) : const EmptyContent(),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => EmptyContent(
+        title: 'Something went wrong',
+        message: 'Can\'t load items right now: $error, $stackTrace',
+      ),
+    );
+  }
+
+  Widget _buildList(WidgetRef ref, List<DiaryEntryAndDrink> diaryEntryAndDrinkData) {
+    //final appState = ref.watch(appStateProvider);
+    diaryEntryAndDrinkData.sort((a, b) => a.diaryEntry.dateTime!.compareTo(b.diaryEntry.dateTime!));
+    int previousDay = -1;
+    bool displayDay = false;
+    return SlidableAutoCloseBehavior(
+      child: CustomScrollView(
+        slivers: <Widget>[
+          DiarySummary(diaryEntries: diaryEntryAndDrinkData),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                //return Text('ALAN', key: ValueKey('$index'));
+                final dt = diaryEntryAndDrinkData[index].diaryEntry.dateTime!.toLocal();
+                final day = dt.weekday;
+                if (day != previousDay) {
+                  displayDay = true;
+                } else {
+                  displayDay = false;
+                }
+                previousDay = day;
+                return DiaryItem(
+                  diaryEntryAndDrink: diaryEntryAndDrinkData[index],
+                  index: index,
+                  displayDay: displayDay,
+                );
+              },
+              childCount: diaryEntryAndDrinkData.length,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

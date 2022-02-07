@@ -1,8 +1,9 @@
 import 'package:alconometer/features/diary/day_view.dart';
 import 'package:alconometer/features/diary/diary_state.dart';
 import 'package:alconometer/features/diary/week_view.dart';
+import 'package:alconometer/providers/app_settings.dart';
 import 'package:alconometer/providers/app_state.dart';
-import 'package:alconometer/providers/top_level_providers.dart';
+import 'package:alconometer/theme/alconometer_theme.dart';
 import 'package:alconometer/widgets/app_drawer.dart';
 import 'package:alconometer/widgets/custom_app_bar.dart';
 import 'package:alconometer/widgets/custom_tab_bar.dart';
@@ -38,7 +39,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(vsync: this, length: _tabs.length);
-    _tabController.addListener(_setTab);
+    //_tabController.addListener(_setTab);
   }
 
   @override
@@ -50,10 +51,10 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (context, WidgetRef ref, __) {
-      final darkMode = ref.watch(appSettingsManagerProvider).darkMode;
+      final darkMode = ref.watch(appSettingsProvider).darkMode;
       final appState = ref.watch(appStateProvider);
+      final appSettings = ref.watch(appSettingsProvider);
       final diaryState = ref.watch(diaryStateProvider);
-
       final selectedTab = diaryState.selectedTab;
       return DefaultTabController(
         key: const Key('diaryDefaultTabKey'),
@@ -62,32 +63,20 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
         child: Scaffold(
           appBar: CustomAppBar(
             title: _getDateSelector(),
-            actions: <Widget>[
-              IconButton(
-                icon: Icon(darkMode ? Icons.wb_sunny : Icons.mode_night, color: darkMode ? Colors.white : Colors.white),
-                onPressed: () async {
-                  await ref.read(appSettingsManagerProvider).toggleDarkMode();
-                },
-              ),
-            ],
             bottom: CustomTabBar(
-                color: Theme.of(context).canvasColor,
-                tabBar: TabBar(
-                  controller: _tabController,
-                  padding: const EdgeInsets.all(0.0),
-                  onTap: _diaryViewTypeHandler,
-                  tabs: _tabs,
-                )),
+              color: Theme.of(context).canvasColor,
+              tabBar: TabBar(
+                controller: _tabController,
+                padding: const EdgeInsets.all(0.0),
+                onTap: (index) {
+                  _diaryViewTypeHandler(index);
+                },
+                tabs: _tabs,
+              ),
+            ),
           ),
           drawer: const AppDrawer(),
-          body: TabBarView(
-            controller: _tabController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: <Widget>[
-              DayView(),
-              WeekView(),
-            ],
-          ),
+          body: _DiaryTabs(_tabController),
         ),
       );
     });
@@ -95,18 +84,19 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
 
   void _setTab() {
     Future.delayed(Duration.zero, () {
+      debugPrint('>>> _setTab');
       final index = _tabController.index;
-      ref.read(appStateProvider.notifier).setDiaryType(DiaryType.values[index]);
       _diaryViewTypeHandler(index);
-      //_tabController.animateTo(index);
     });
   }
 
   void _diaryViewTypeHandler(int index) {
+    debugPrint('>>> _diaryViewTypeHandler');
+    final firstDayOfWeek = ref.read(appSettingsProvider).firstDayOfWeek;
     if (index == 0) {
-      ref.read(appStateProvider.notifier).setDiaryType(DiaryType.day);
+      ref.read(appStateProvider.notifier).setDiaryType(DiaryType.day, firstDayOfWeek!);
     } else {
-      ref.read(appStateProvider.notifier).setDiaryType(DiaryType.week);
+      ref.read(appStateProvider.notifier).setDiaryType(DiaryType.week, firstDayOfWeek!);
     }
   }
 
@@ -122,7 +112,6 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
           ),
           InkWell(
             child: buildDatePicker(ref),
-            //DateFormat.yMd().format(dateSelectorProvider.selectedDate).toString(),
           ),
           IconButton(
             icon: const Icon(Icons.arrow_right),
@@ -134,8 +123,9 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
     );
   }
 
-  bool _selectableDays(DateTime dateTime) {
-    if (dateTime.weekday == 1) {
+  bool _selectableDays(DateTime dateTime, String firstDayOfWeek) {
+    final day = firstDayOfWeek == AppSettingsConstants.firstDayOfWeek[0] ? 7 : 1;
+    if (dateTime.weekday == day) {
       return true;
     }
     return false;
@@ -143,62 +133,72 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> with SingleTickerProv
 
   Widget buildDatePicker(WidgetRef ref) {
     final appState = ref.watch(appStateProvider);
-    final appSettingsManager = ref.read(appSettingsManagerProvider);
+    final appSettings = ref.watch(appSettingsProvider);
     return InkWell(
       child: Builder(
         builder: (context) {
           if (appState.diaryType == DiaryType.day) {
             return Text(
-              DateFormat(appSettingsManager.dateFormat).format(appState.displayedDate!),
+              DateFormat(appSettings.dateFormat).format(appState.displayedDate!.toLocal()),
             );
           } else {
             // TODO: Relocate to provider
             final weekStartDate = appState.displayedDate;
             final weekEndDate = weekStartDate!.add(const Duration(days: 6));
-            final weekStartDateFormatted = DateFormat(appSettingsManager.dateFormat).format(weekStartDate);
-            final weekEndDateFormatted = DateFormat(appSettingsManager.dateFormat).format(weekEndDate);
+            final weekStartDateFormatted = DateFormat(appSettings.dateFormat).format(weekStartDate.toLocal());
+            final weekEndDateFormatted = DateFormat(appSettings.dateFormat).format(weekEndDate.toLocal());
             return Row(children: <Widget>[AutoSizeText('$weekStartDateFormatted - $weekEndDateFormatted', maxLines: 1)]);
           }
         },
       ),
       onTap: () async {
-        final currentDate = DateTime.now();
+        final currentDate = DateTime.now().toUtc();
         final displayedDate = await showDatePicker(
           context: context,
           initialDate: appState.displayedDate!,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(currentDate.year + 5),
-          selectableDayPredicate: (appState.diaryType == DiaryType.week) ? _selectableDays : null,
-          locale: const Locale('en', 'GB'),
+          firstDate: DateTime.utc(2020),
+          lastDate: DateTime.utc(currentDate.year + 5),
+          selectableDayPredicate: (dateTime) => (appState.diaryType == DiaryType.week) ? _selectableDays(dateTime, appSettings.firstDayOfWeek!) : true,
+          locale: ref.read(appSettingsProvider).firstDayOfWeek == AppSettingsConstants.firstDayOfWeek[1] ? const Locale('en', 'GB') : null,
+          builder: (context, child) => Theme(
+            data: appSettings.darkMode! ? AlconometerTheme.datePickerDark() : AlconometerTheme.datePickerLight(),
+            child: child!,
+          ),
         );
         if (displayedDate != null) {
-          ref.read(appStateProvider.notifier).setDisplayedDate(displayedDate);
+          var date = DateTime(displayedDate.year, displayedDate.month, displayedDate.day).toLocal();
+          ref.read(appStateProvider.notifier).setDisplayedDate(date);
         }
       },
     );
   }
 
-  // TODO: Relocate to provider
   void _arrowLeft(WidgetRef ref) {
     final appState = ref.watch(appStateProvider);
-    final dateTime = appState.displayedDate;
-    final diaryViewType = appState.diaryType;
-    if (diaryViewType == DiaryType.day) {
-      ref.read(appStateProvider.notifier).setDisplayedDate(dateTime!.subtract(const Duration(days: 1)));
-    } else {
-      ref.read(appStateProvider.notifier).setDisplayedDate(dateTime!.subtract(const Duration(days: 7)));
-    }
+    ref.read(appStateProvider.notifier).prevDisplayedDate();
+    debugPrint('appState: $appState');
   }
 
-  // TODO: Relocate to provider
   void _arrowRight(WidgetRef ref) {
-    final appState = ref.read(appStateProvider);
-    final dateTime = appState.displayedDate;
-    final diaryViewType = appState.diaryType;
-    if (diaryViewType == DiaryType.day) {
-      ref.read(appStateProvider.notifier).setDisplayedDate(dateTime!.add(const Duration(days: 1)));
-    } else {
-      ref.read(appStateProvider.notifier).setDisplayedDate(dateTime!.add(const Duration(days: 7)));
-    }
+    final appState = ref.watch(appStateProvider);
+    ref.read(appStateProvider.notifier).nextDisplayedDate();
+    debugPrint('appState: $appState');
+  }
+}
+
+class _DiaryTabs extends ConsumerWidget {
+  final TabController _tabController;
+  const _DiaryTabs(this._tabController);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TabBarView(
+      controller: _tabController,
+      physics: const NeverScrollableScrollPhysics(),
+      children: const <Widget>[
+        DayView(),
+        WeekView(),
+      ],
+    );
   }
 }

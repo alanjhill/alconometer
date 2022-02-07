@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 class AuthenticationService {
   AuthenticationService(this._firebaseAuth);
+
   final FirebaseAuth _firebaseAuth;
 
   String? get userId {

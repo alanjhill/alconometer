@@ -1,56 +1,56 @@
 import 'package:alconometer/features/auth/auth_screen.dart';
 import 'package:alconometer/features/home/home_screen.dart';
-import 'package:alconometer/features/loading/loading_screen.dart';
-import 'package:alconometer/features/settings/settings_screen.dart';
-import 'package:alconometer/providers/app_settings_manager.dart';
-import 'package:alconometer/providers/app_state.dart';
-import 'package:alconometer/providers/diary_entries.dart';
-import 'package:alconometer/providers/drinks.dart';
+import 'package:alconometer/providers/app_settings.dart';
+import 'package:alconometer/providers/shared_preferences_service.dart';
 import 'package:alconometer/providers/top_level_providers.dart';
 import 'package:alconometer/routing/app_router.dart';
 import 'package:alconometer/theme/alconometer_theme.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  final sharedPreferences = await SharedPreferences.getInstance();
 
   runApp(
     ProviderScope(
-      child: MyApp(),
+      overrides: [
+        sharedPreferencesServiceProvider.overrideWithValue(
+          SharedPreferencesService(sharedPreferences),
+        ),
+      ],
+      child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  late final AppSettingsManager _appSettingsManager;
+class _MyAppState extends ConsumerState<MyApp> {
+  late final AppSettings _appSettings;
 
   @override
   void initState() {
     super.initState();
-    _appSettingsManager = AppSettingsManager();
-    _appSettingsManager.init();
+    ref.read(appSettingsProvider.notifier).init();
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, WidgetRef ref, child) {
-        final appSettingsManager = ref.watch(appSettingsManagerProvider);
         ThemeData theme;
-        if (appSettingsManager.darkMode) {
+        if (ref.watch(appSettingsProvider).darkMode!) {
           theme = AlconometerTheme.dark();
         } else {
           theme = AlconometerTheme.light();
@@ -59,8 +59,9 @@ class _MyAppState extends State<MyApp> {
         return MaterialApp(
           title: 'alcon-o-meter',
           theme: theme,
+          debugShowCheckedModeBanner: false,
           home: AuthWidget(
-            signedInBuilder: (_) => const LoadingScreen(),
+            signedInBuilder: (_) => const HomeScreen(),
             nonSignedInBuilder: (_) => const AuthScreen(),
           ),
           onGenerateRoute: (settings) => AppRouter.onGenerateRoute(context, settings),
@@ -93,7 +94,6 @@ class AuthWidget extends ConsumerWidget {
     final authStateChanges = ref.watch(authStateChangesProvider);
     return authStateChanges.when(
       data: (user) {
-        debugPrint('Auth 1');
         return _data(context, user);
       },
       loading: () => const Scaffold(
@@ -102,7 +102,7 @@ class AuthWidget extends ConsumerWidget {
         ),
       ),
       error: (_, __) => const Scaffold(
-        body: Text('oops'),
+        body: Text('Sorry, we\'ve messed up!'),
       ),
     );
   }

@@ -11,19 +11,21 @@ class EmptyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(fontSize: 32.0, color: Colors.black54),
-          ),
-          Text(
-            message,
-            style: const TextStyle(fontSize: 16.0, color: Colors.black54),
-          ),
-        ],
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              title,
+              style: const TextStyle(fontSize: 32.0, color: Colors.black54),
+            ),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16.0, color: Colors.black54),
+            ),
+          ],
+        ),
       ),
     );
   }
