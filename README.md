@@ -1,16 +1,10 @@
 # alconometer
 
-A new Flutter project.
+Inspired by the cronometer app.
 
-## Getting Started
+An app to record and track your alcohol intake.
 
-This project is a starting point for a Flutter application.
+This is WIP and basically a learning exercise for myself.
 
-A few resources to get you started if this is your first Flutter project:
+It uses Firestore Realtime Database which isn't necessarily the best choice.  This is something I had not used before so thought I'd have a play.
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
